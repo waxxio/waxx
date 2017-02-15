@@ -19,7 +19,7 @@ The WAXX Framework was developed to build CRUD applications and REST and RPC ser
 
 ## Who's Behind This
 
-WAXX is a project of [ePark Labs](https://eparklabs.com/) and was developed by [Dan Fitzpatrick](https://djf.co/). 
+WAXX is a project of [ePark Labs](https://www.eparklabs.com/) and was developed by [Dan Fitzpatrick](https://djf.co/). 
 
 ## How Does it Compare to Rails
 
@@ -32,7 +32,8 @@ _app/hello/hello.rb:_
   module App::Hello
     extend Waxx::Object
     extend self
-    
+    init
+
     runs({
       default: "world",
       world: {
@@ -61,7 +62,7 @@ NOTE: This is not the way you build a normal app. Just here because everyone wan
 Visit [http://localhost:7777/](http://localhost:7777/) and follow the directions. If you want a different port, edit `etc/active/config.yaml` first.
 
 ### High Performance
-WAXX is multi-process and multi-threaded. You specify the number of processes and the number of threads per process. Each thread is prespawned and each thread makes it's own database connection. Requests are received and put into a FIFO request queue. The threads work through the queue. Each request, including session management, a database query, access control, and rendering in HTML or JSON is approximately 1-2ms (on a modern 2016 Xeon server). With additional libraries, WAXX also easily generates XML, XLSX, CSV, and PDF data. 
+WAXX is multi-threaded and each request is placed into a thread pool (queue) and then a thread will process it. You specify the number of threads in the config file. Each thread is prespawned and each thread makes it's own database connection. Requests are received and put into a FIFO request queue. The threads work through the queue. Each request, including session management, a database query, access control, and rendering in HTML or JSON is approximately 1-2ms (on a modern 2016 Xeon server). With additional libraries, WAXX also easily generates XML, XLSX, CSV, and PDF data. 
 
 ### Easy to Grok 
 Waxx has no Classes. It is Module-based and the Modules have methods (functions). Each method within a Module is given parameters and the method runs in isolation. There are no instance variables. Consequently, it is very easy to understand what any method does and it is very easy to test methods. You can call any method in the whole system from the console. Passing in the same variables will always return the same result.
@@ -74,33 +75,33 @@ There are some basic terminologies in WAXX:
 * Object `runs` a URL path - business logic (normally get from or post to a view)
 * View: Like a DB view -- fields from one or more tables/objects
 * Html, Json, Xlsx, Tab, Csv, Pdf, etc.: How to render the view
-* x is a variable that is passed to nearly all methods and contains the request (`x.res` contains: get and post vars, request cookies, and environment) and response (`x.res` contains the status, response cookies, headers, and content body) 
+* x is a variable that is passed to nearly all methods and contains the request (`x.req` contains: get and post vars, request cookies, and environment) and response (`x.res` contains the status, response cookies, headers, and content body) 
 
 A request is processed as follows:
 
 1. [The request is received by the server (or a reverse proxy/load balancer like HAProxy or NGINX) | The request is received directly by Waxx (for development only)]
-2. The request is passed to the Waxx server and placed in a queue
+2. The request is passed to the Waxx server and placed in a queue: `Waxx::Server.queue`
 3. The request is popped off the queue by a Ruby green thread and parsed
 4. The variable `x` is created with the request `x.req` and response `x.res`.
 5. The run method is called for the appropriate app (a namespaced RPC). All routes: /app/act/[arg1/args2/arg3/...] => app is the module and act is the method to call with the args.
 6. You output to the response using `x << "output"` or using helper methods: `App::Html.page(...)`
-7. The response is returned to the client. Partial and chunked responses are supported as well.  
+7. The response is returned to the client. Partial, chunked, and streamed responses are supported as well.  
 
 
 ## Fast to Develop
 
 1. Simple to know where the code is located for any URI -- no need to chase down route logic
 2. Fields are defined upfront
-3. Field have attributes that make a lot of UI development automatic
+3. Field have attributes that make a lot of UI development simple (optional)
 4. Views allow you to see exactly what is on an interface and all the business logic
 5. Most rendering is automatic unless you want to do special stuff. You can use pure Ruby functions or your favorite template engine.
 
-There are no routes. All paths are `/:app/:act/:arg1/:arg2/...`. The URL maps to an App and runs the act (method). For example: `example.com/person/list` will execute the `list` method in the `App::Person` object. This method is defined in `app/person/person.rb`. Another example: A request to `/website_page/content/3` will execute the `content` method in the `App::WebsitePage` app and pass in `3` as the first parameter after 'x'. There is a default app and a default method in each app. So a request to `example.com/` will show the home page if the default app is `website` and the default method in website is `home`.
+There are no routes. All paths are `/:app/:act/:arg1/:arg2/...`. The URL maps to an App and runs the act (method). For example: `example.com/person/list` will execute the `list` method in the `App::Person` module. This method is defined in `app/person/person.rb`. Another example: A request to `/website_page/content/3` will execute the `content` method in the `App::WebsitePage` app and pass in `3` as the first parameter after 'x'. There is a default app and a default method in each app. So a request to `example.com/` will show the home page if the default app is `website` and the default method in website is `home`.
 
 
 
 ### File Structure
-WAXX places each module in it's own directory. This includes the Object, Runner, Views,  Layouts, and Tests. I normally place my app-specific javascript and css in this same folder as well. In this way, all of the functionality and features of a specific App or Module are fully self-contained. However, you can optionally put your files anywhere and require them in your code. So if you like all the objects to be in one folder you can do that. But that is not Waxxy.
+WAXX places each module in it's own directory. This includes the Object, Runner, Views,  Layouts, and Tests. I normally place my app-specific javascript and css in this same folder as well. In this way, all of the functionality and features of a specific App or Module are fully self-contained. However, you can optionally put your files anywhere and require them in your code. So if you like all the objects to be in one folder you can do that. If you work with a large team and Ruby and Javascript people do not overlap, then maybe that will work for you.
 
 This is a normal structure:
 
@@ -108,26 +109,28 @@ This is a normal structure:
 
 ```
 WAXX.ROOT
-|-- app                                # Your apps go here. Also Waxx::App::Root
-|   |-- app.rb              # Site-specific methods
-|   |-- html.rb              # The shared HTML layout and helpers
-|   |-- app                # Customizable waxx helper apps (logging and error handling)
-|   |   |-- app.rb            # App/generic functions
+|-- app                         # Your apps go here. Also Waxx::App::Root
+|   |-- app.rb                  # Site-specific methods
+|   |-- html.rb                 # The shared HTML layout and helpers
+|   |-- app                     # Customizable waxx helper apps (logging and error handling)
+|   |   |-- app.rb              # App/generic functions
 |   |   |-- error
-|   |   |   |-- app_error.rb           # Error handler
+|   |   |   |-- app_error.rb    # Error handler
 |   |   |   |-- dhtml.rb        # Render a Dhtml error
-|   |   |   |-- html.rb          # Render an Html error
-|   |   |   `-- json.rb          # Render a Json error
+|   |   |   |-- html.rb         # Render an Html error
+|   |   |   `-- json.rb         # Render a Json error
 |   |   |-- log
-|   |   |   `-- app_log.rb             # Log to your chosen logging system
-|   |-- company              # An app
+|   |   |   `-- app_log.rb      # Log to your chosen logging system
+|   |-- company                 # An app
 |   |   |-- company.rb          # An object and router for /company
-|   |   `-- list.rb            # A view (fields and layout)
-|   |-- person              # The person app
-|   |   |-- html.rb            # Shared HTML for the person app
-|   |   |-- person.rb          # The Person object and /person methods
+|   |   `-- list.rb             # A view (fields and layout)
+|   |-- person                  # The person app
+|   |   |-- html.rb             # Shared HTML for the person app
+|   |   |-- person.rb           # The Person object and /person methods
 |   |   `-- profile.rb          # The Person::Profile view
-|   |-- usr                # Usr app (included in Waxx)
+|   |-- grp                     # Grp app (included in Waxx)
+|   |   `-- grp.rb
+|   |-- usr                     # Usr app (included in Waxx)
 |   |   |-- email.rb
 |   |   |-- grp
 |   |   |-- html.rb
@@ -136,75 +139,36 @@ WAXX.ROOT
 |   |   |-- record.rb
 |   |   |-- usr.js
 |   |   `-- usr.rb
-|   `-- website              # The website app (included in Waxx)
-|       |-- html.rb            # Html for the website
-|       |-- page            # website_page app
-|       |   |-- list.rb          # List webpages
-|       |   |-- record.rb        # Edit a webpage
-|       |   `-- website_page.rb      # WebsitePage object and methods
+|   `-- website                 # The website app (included in Waxx)
+|       |-- html.rb             # Html for the website
+|       |-- page                # website_page app
+|       |   |-- list.rb         # List webpages
+|       |   |-- record.rb       # Edit a webpage
+|       |   `-- website_page.rb # WebsitePage object and methods
 |       `-- website.rb          # Website Object and methods/routes
 |-- bin
-|   `-- waxx              # The waxx bin does everything (on off buff make test deploy etc)
-|-- db                  # Store database stuff here
-|   |-- init.dmp            # SQL dump of the initial state of the DB
-|   `-- migrations            # Migrations live in here (straight one-way SQL files)
+|   `-- waxx                    # The waxx bin does everything (on off buff make test deploy etc)
+|-- db                          # Store database stuff here
+|   |-- init.dmp                # SQL dump of the initial state of the DB
+|   `-- migrations              # Migrations live in here (straight one-way SQL files)
 |       |-- 0-waxx.sql          # The initial migration that adds support for migrations to the DB
 |       `-- 201602240719-invoice.sql  # A migration YmdHM-name.sql (`waxx migration invoice` makes this)
-|-- etc                  # Config for each environment
-|   |-- active -> dev          # Symlink to the active environment
-|   |-- deploy.yaml            # Defines how to deploy to each environment
-|   |-- dev                # The dev environment
+|-- etc                         # Config for each environment
+|   |-- active -> dev           # Symlink to the active environment
+|   |-- deploy.yaml             # Defines how to deploy to each environment
+|   |-- dev                     # The dev environment
+|   |   `-- config.yaml
+|   |-- stage                   # The stage environment
 |   |   |-- config.yaml
-|   |   `-- ssl
-|   |       |-- intermediate.crt
-|   |       |-- server.crt
-|   |       |-- server.csr
-|   |       |-- server.key
-|   |       `-- server.pem
-|   |-- stage              # The stage environment
-|   |   |-- config.yaml
-|   |   |-- deploy
-|   |   `-- ssl
-|   |       |-- intermediate.crt
-|   |       |-- server.crt
-|   |       |-- server.csr
-|   |       |-- server.key
-|   |       `-- server.pem
-|   `-- prod              # The production environment
+|       `-- deploy              # The script to deploy to stage (run on the stage server)
+|   `-- prod                    # The production environment
 |       |-- config.yaml
-|       |-- deploy
-|       `-- ssl
-|           |-- intermediate.crt
-|           |-- server.crt
-|           |-- server.csr
-|           |-- server.key
-|           `-- server.pem
-|-- lib                  # The libraries used by your app (waxx is included)
-|   |-- waxx
-|   |   |-- app.rb
-|   |   |-- console.rb
-|   |   |-- csrf.rb
-|   |   |-- dante.rb
-|   |   |-- database.rb
-|   |   |-- encrypt.rb
-|   |   |-- error.rb
-|   |   |-- html.rb
-|   |   |-- http.rb
-|   |   |-- irb.rb
-|   |   |-- irb_env.rb
-|   |   |-- json.rb
-|   |   |-- object.rb
-|   |   |-- patch.rb
-|   |   |-- run.rb
-|   |   |-- server.rb
-|   |   |-- session.rb
-|   |   |-- util.rb
-|   |   `-- view.rb
-|   `-- waxx.rb
-|-- log                  # The log folder (optional)
+|       `-- deploy              # The script to deploy to stage (run on the production server(s))
+|-- lib                         # The libraries used by your app (waxx is included)
+|-- log                         # The log folder (optional)
 |   `-- waxx.log
-|-- private                # A folder for private files (served by the file app if included)
-`-- public                # The public folder (Web server should have this as the root)
+|-- private                     # A folder for private files (served by the file app if included)
+`-- public                      # The public folder (Web server should have this as the root)
    
 ```
 
@@ -216,8 +180,7 @@ The Waxx::Object has two purposes:
 **app/person/person.rb:**
   
   module App::Person
-      extend Waxx::Object
-    extend Waxx::Pg # Your DB wrapper
+    extend Waxx::Object
     extend self
     
     # Specify the fields/attributes
@@ -231,7 +194,7 @@ The Waxx::Object has two purposes:
     
     # Specify what interfaces are exposed (routes) and the access control (ACL)
     runs(
-        # Handles /person by calling list(x)
+      # Handles /person by calling list(x)
       default: "list",
       # Handles /person/list or /person because "list" is the default runner
       list: {
@@ -243,13 +206,14 @@ The Waxx::Object has two purposes:
       record: {
         desc: "Edit a person record",
         acl: %w(admin), # User must be in the "admin" group to run this action
-        get: lambda{|x,id| Record.run(x,id)},
-        post: lambda{|x,id| Record.run(x,id, x.req.post)},
-        delete: lambda{|x,id| Record.run(x,id)},
+        get: lambda{|x,id| Record.run(x, id)},
+        post: lambda{|x,id| Record.run(x, id, x.req.post)},
+        delete: lambda{|x,id| Record.run(x, id)},
       }
     )
   end
   
+  # Require the views
   require_relative 'list'
   require_relative 'record'
 
@@ -334,7 +298,6 @@ We will add a relationship between the Person and the Company:
 
   module App::Person
       extend Waxx::Obj
-      extend Waxx::Pg # Your DB wrapper
       extend self
 
       # Specify the fields/attributes
@@ -373,7 +336,6 @@ We will add an invoice and invoice_item table.
 
   module App::Invoice
       extend Waxx::Obj
-      extend Waxx::Pg
       extend self
 
       # Specify the fields/attributes
@@ -390,17 +352,20 @@ We will add an invoice and invoice_item table.
 
 INNER JOIN (If you don't want to show invoices with no items): 
 
-  id: {pkey: true, is:"items:invoice_item.invoice_id"}
+  id: {pkey: true, is:"items: invoice_item.invoice_id"}
   
 LEFT JOIN (If you want to show invoices with no items):
 
-  id: {pkey: true, is:"items:invoice_item.invoice_id+"}
+  id: {pkey: true, is:"items: < invoice_item.invoice_id"}
+
+Many-to-Many JOIN (The invoice has zero on more tags stored in the item_tag table NOTE: THIS MAY CHANGE!):
+
+  id: {pkey: true, is:"tags: tag_item.item_id.tag_id tag.id"}
 
 **InvoiceItem Object**
 
   module App::InvoiceItem
       extend Waxx::Obj
-      extend Waxx::Pg
       extend self
 
       # Specify the fields/attributes
@@ -614,9 +579,8 @@ ACLs are defined as a attribute (`acl: [nil|string|array|hash|lambda]`) of each 
   module App::Product
     extend Waxx::Object
     extend self
-    init
     
-    runs({
+    runs(
       default: "list",
       
 #### Public
@@ -699,3 +663,7 @@ End the object file
   end
   
 **End: app/product/product.rb**
+
+That is it for now. More documentation to come soon.
+
+
