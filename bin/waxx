@@ -1,0 +1,107 @@
+#! /usr/bin/env ruby
+
+require 'optparse'
+
+command = ARGV[0]    
+commands = %w(on off buff start stop restart console get put post delete patch conf migrate migration deploy help)
+if not commands.include? command
+  puts "Enter a command: #{commands.join(", ")}"
+  puts "waxx --help for all options"
+  exit 1
+end
+
+def parse_options(commands)
+  options = {
+    port: 7700,
+    base: ENV['PWD'],
+    env: "active",
+    pid_path: "tmp/pids/waxx.pid",
+    daemonize: false,
+    log_path: "log/waxx.log",
+    user: ENV['USER'],
+    group: nil,
+    debug: false,
+    to: "stage"
+  }
+  headline = ["Waxx", "The high-performance flexible framework"].compact.join(" - ")
+  OptionParser.new do |opts|
+    opts.summary_width = 25
+    opts.banner = [headline, "\n\n",
+                 "Usage: waxx command [-b base_dir] [-p port] [-P pid_file] [-d] [-e env_name] [-l file] [-u user] [-g group]\n",
+                 "Commands: #{commands.join(" ")}\n",
+                 "    waxx help:\n"].compact.join("")
+    opts.separator ""
+
+    opts.on("-p", "--port PORT", Integer, "Specify port", "(default: #{options[:port]})") do |v|
+      options[:port] = v
+    end
+
+    opts.on("-b", "--base DIR", String, "The base/root directory of the app. Should contain: app, bin, etc, log, etc.", "(default: cwd: #{options[:base]})") do |v|
+      options[:base] = v.sub(/\/$/,"")
+    end
+
+    opts.on("-e", "--env ENVIRONMENT", String, "The env to find the config.yaml file.", "(default: #{options[:env]})") do |v|
+      options[:env] = v
+    end
+
+    opts.on("-P", "--pid FILE", String, "save PID in FILE when using -d option.", "(default: #{options[:pid_path]})") do |v|
+      options[:pid_path] = File.expand_path(v)
+    end
+
+    opts.on("-d", "--daemon", "Daemonize mode", "(default: false)") do |v|
+      options[:daemonize] = v
+    end
+
+    opts.on("-l", "--log FILE", String, "Logfile for output", "(default: /var/log/#{@name}.log)") do |v|
+      options[:log_path] = v
+    end
+
+    opts.on("-n", "--name NAME", String, "The name of the migration", "(default: ask)") do |name|
+      options[:name] = name
+    end
+
+    opts.on("-u", "--user USER", String, "User to run as", "(default: current user)") do |user|
+      options[:user] = user
+    end
+
+    opts.on("-t", "--to TO", String, "Where to deploy to (defined in etc/deploy.yaml)", "(default: stage)") do |to|
+      options[:to] = to
+    end
+
+    opts.on("-u", "--user USER", String, "User to run as", "(default: current user)") do |user|
+      options[:user] = user
+    end
+
+    opts.on("-g", "--group GROUP", String, "Group to run as", "(default: current user's primary group)") do |group|
+      options[:group] = group
+    end
+
+    opts.on("-D", "--debug", "Output debug messages (console only)","(default: off)") do
+      opts[:debug] = true
+    end
+
+    opts.on_tail("-h", "--help", "Display this usage information.") do
+      puts "#{opts}\n"
+      exit
+    end
+
+  end.parse!
+  options
+end
+
+opts = parse_options(commands)
+require "#{opts[:base]}/lib/waxx"
+#require "#{opts[:base]}/lib/dante"
+Conf.load_yaml(opts[:base], opts[:env])
+Conf["opts"] = opts
+require "#{opts[:base]}/app/app"
+
+def debug(str)
+  Waxx.debug str
+end
+
+if Waxx::Console::Command.respond_to? command
+  Waxx::Console::Command.send(command, opts)
+else
+  puts "The #{command} command has not been implemented yet. opts: #{opts.inspect} conf: #{Conf.data.inspect}"
+end

@@ -1,0 +1,47 @@
+server:
+  name: "Waxx Server"
+  start_threads: 2
+  max_threads: 10
+  idle_thread_timeout: 300
+  log_dir: log
+  pid_dir: tmp/pids
+
+site:
+  name: Waxx Demo
+  support_email: demo@waxx.io
+  url: https://demo.waxx.io/
+
+encryption:
+  cipher: AES-256-CBC
+  key: A-32-character-string. CHANGE THIS!
+  iv: A 16-character-string. CHANGE THIS!
+
+cookie:
+  user:
+    name: u
+    expires_after_login_mins: 1440
+    expires_after_activity_mins: 480
+    secure: true
+  agent:
+    name: a
+    expires_years: 30
+    secure: true
+
+debug:
+  level: 9
+  on_screen: true
+  send_email: false
+  email: you@example.com
+  auto_reload_code: true
+
+databases:
+  app: postgresql://user:pass@host:5432/database
+
+default:
+  app: website
+  act: index
+  ext: html
+
+file:
+  serve: true
+  path: public

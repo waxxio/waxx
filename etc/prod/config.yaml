@@ -1,0 +1,47 @@
+server:
+  name: "Waxx Server"
+  start_threads: 8
+  max_threads: 20
+  idle_thread_timeout: 600
+  log_dir: log
+  pid_dir: tmp/pids
+
+site:
+  name: Waxx Demo
+  support_email: support@example.com
+  url: https://www.waxx.io/
+
+encryption:
+  cipher: AES-256-CBC
+  key: A-32-character-string. CHANGE THIS! See: https://www.grc.com/passwords.htm
+  iv: A 16-character-string. CHANGE THIS!
+
+cookie:
+  user:
+    name: u
+    expires_after_login_mins: 1440
+    expires_after_activity_mins: 480
+    secure: true
+  agent:
+    name: a
+    expires_years: 30
+    secure: true
+
+debug:
+  level: 1
+  on_screen: false
+  send_email: true
+  email: you@example.com
+  auto_reload_code: false
+
+databases:
+  app: postgresql://user:pass@host:5432/database
+
+default:
+  app: website
+  act: index
+  ext: html
+
+file:
+  serve: false
+  path: public
