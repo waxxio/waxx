@@ -5,7 +5,11 @@ module Waxx::Database
   extend self
 
   def connection(conf=Conf['database'])
-    conn = PG.connect( conf )
+    if Hash === conf
+      conn = PG.connect( dbname: conf['name'], user: conf['user'], password: conf['password'], host: conf['host'] )
+    else
+      conn = PG.connect( conf )
+    end
     conn.type_map_for_results = PG::BasicTypeMapForResults.new conn
     conn.type_map_for_queries = PG::BasicTypeMapForQueries.new conn
     conn
