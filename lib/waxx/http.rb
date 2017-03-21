@@ -17,9 +17,9 @@ module Waxx::Http
   end
 
   def escape(str)
-    str.to_s.gsub(/([^ a-zA-Z0-9_.-]+)/) do |m|
+    str.to_s.gsub(/([^a-zA-Z0-9_.-]+)/) do |m|
       '%' + m.unpack('H2' * m.bytesize).join('%').upcase
-    end.tr(' ', '+')
+    end
   end
   alias qs escape
 

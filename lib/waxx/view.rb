@@ -8,6 +8,9 @@ module Waxx::View
   attr :columns
   attr :joins
   attr :relations
+  attr :matches
+  attr :searches
+  attr :order_by
 
   def init(tbl: nil, cols: nil, views: nil)
     @table = (tbl || App.table_from_class(name)).to_sym
@@ -15,6 +18,10 @@ module Waxx::View
     @relations = {}
     has(*cols) if cols
     as(views) if views
+  end
+
+  def [](c)
+    @columns[c.to_sym]
   end
 
   def has(*cols)
@@ -37,8 +44,11 @@ module Waxx::View
         #debug "j:#{j.inspect}, n: #{n}, rel: #{rel_name}, col: #{col_name}"
         begin
           col = (App.get_const(App, j/:table)/col_name).dup
-        rescue NoMethodError, NameError, TypeError => e
-          debug "ERROR: #{rel_name} does not define col: #{col_name}"
+        rescue NoMethodError => e
+          debug "ERROR: NoMethodError: #{rel_name} does not define col: #{col_name}"
+          raise e
+        rescue NameError, TypeError => e
+          debug "ERROR: Name or Type Error: #{rel_name} does not define col: #{col_name}"
           raise e
         end
         begin
@@ -113,6 +123,18 @@ module Waxx::View
     }
   end
 
+  def match_in(*cols)
+    @matches = cols.flatten
+  end
+
+  def search_in(*cols)
+    @searches = cols.flatten
+  end
+
+  def default_order(ord)
+    @order_by = ord
+  end
+
   def run(x, id:nil, data:nil, where:nil, having:nil, order:nil, limit:nil, offset:nil, message:{}, as:x.ext, meth:x.meth, args:nil)
     case meth.to_sym
     when :get, :head
@@ -120,16 +142,15 @@ module Waxx::View
         if id
           data = get_by_id(x, id)
         else
-          debug "view.get"
           data = get(x, where:where, having:having, order:(order||x['order']), limit:(limit||x['limit']), offset:(offset||x['offset']), args:args)
         end
       end
-    when :put, :post
+    when :put, :post, :patch
       data = put_post(x, id, data, args:args)
     when :delete
       delete(x, id, args:args)
     else
-      raise "Unknown method in Waxx::View.run(#{name})"
+      raise "Unknown request method in Waxx::View.run(#{name})"
     end
     layout = const_get(as.to_s.capitalize) rescue nil
     return App.not_found(x, message:"No layout defined for #{as}") if not layout
@@ -140,10 +161,36 @@ module Waxx::View
     end
   end
   alias view run
+
+  def build_where(x, args: {}, matches: @matches, searches: @searches)
+    return nil if matches.nil? and searches.nil?
+    w_str = ""
+    w_args = []
+    q = args/:q || x['q']
+    if q and searches
+      w_str += "("
+      searches.each_with_index{|c, i|
+        w_str += " OR " if i > 0
+        w_str += "LOWER(#{c}) like $1"
+      }
+      w_args << "%#{q.downcase}%"
+      w_str += ")"
+    end
+    if matches
+      matches.each_with_index{|c, i|
+        next if (x/c).to_s == "" and (args/c).to_s == ""
+        w_str += " AND " if w_str != ""
+        col = self[c.to_sym]
+        w_str += "#{c} #{col[:match] || "="} $#{w_args.size + 1}"
+        w_args << (args/c || x/c)
+      }
+    end
+    [w_str, w_args]
+  end
                 
   # Override this method in a view to change params
   def get(x, where:nil, having:nil, order:nil, limit:nil, offset:nil, args:nil, &blk)
-    #debug("View.get_.joins: #{joins_to_sql}")
+    where ||= build_where(x, args: args)
     @object.get(x, 
       view: self, 
       where: where, 

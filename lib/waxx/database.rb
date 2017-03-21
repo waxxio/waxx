@@ -5,7 +5,7 @@ module Waxx::Database
   extend self
 
   def connection(conf=Conf['database'])
-    conn = PG.connect( dbname: conf['name'], user: conf['user'], password: conf['password'], host: conf['host'] )
+    conn = PG.connect( conf )
     conn.type_map_for_results = PG::BasicTypeMapForResults.new conn
     conn.type_map_for_queries = PG::BasicTypeMapForQueries.new conn
     conn
@@ -21,15 +21,18 @@ module Waxx::Database
   end
 
   def migrate(opts)
-    db = connection
-    # get the latest version
-    latest = db.exec("SELECT value FROM waxx WHERE name = 'migration.last'").first['value']
-    Dir.entries("#{opts[:base]}/db/migrations/").sort.each{|f|
-      if f =~ /\.sql$/ and f > latest
-        puts "Migrating #{f}"
-        db.exec(File.read("#{opts[:base]}/db/migrations/#{f}"))
-        db.exec("UPDATE waxx SET value = $1 WHERE name = 'migration.last'",[f])
-      end
+    dbs = connections
+    dbs.each{|name, db|
+      puts "Migrating: db.#{name}"
+      # get the latest version
+      latest = db.exec("SELECT value FROM waxx WHERE name = 'migration.last'").first['value']
+      Dir.entries("#{opts[:base]}/db/#{name}/").sort.each{|f|
+        if f =~ /\.sql$/ and f > latest
+          puts "  #{f}"
+          db.exec(File.read("#{opts[:base]}/db/#{name}/#{f}"))
+          db.exec("UPDATE waxx SET value = $1 WHERE name = 'migration.last'",[f])
+        end
+      }
     }
     puts "Migration complete"
   end
