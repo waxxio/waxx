@@ -55,13 +55,12 @@ module Waxx::Console
     attr :x
     def start(opts)
       Waxx::Process::Runner.new('waxx').execute(daemonize: true, pid_path: opts[:pid_path], log_path: opts[:log_path]){
-        App.start(opts)
+        ::App.start(opts)
       }
     end
     alias on start
 
     def stop(opts)
-      #App.stop(opts)
       Waxx::Process::Runner.new('waxx').execute(kill: true, pid_path: opts[:pid_path])
     end
     alias off stop
@@ -122,6 +121,11 @@ module Waxx::Console
       }
     end
 
+    def init(opts)
+      require 'lib/waxx/init'
+      Waxx::Init.init(x, opts)
+    end
+
     def migrate(opts)
       Waxx::Database.migrate opts
     end
@@ -138,5 +142,44 @@ module Waxx::Console
       }
       system "/usr/bin/env #{ENV['EDITOR']} #{m_file}"
     end
+
+    def test(opts)
+      require 'lib/waxx/test.rb'
+      start_time = Time.new
+      re = {}
+      total_tests = 0
+      total_passed = 0
+      if opts[:app] == "waxx"
+        tests = []
+        Dir.entries(opts[:base] + '/lib/waxx/tests').each{|f|
+          next if f =~ /^\./
+          tests << f.sub(/\.rb$/,"")
+          path = opts[:base] + '/lib/waxx/tests/' + f
+          puts path
+          require path
+        }
+
+        tests.each{|waxx_module_test|
+          re[waxx_module_test] = Waxx.send(waxx_module_test)
+          re[waxx_module_test].each{|file, mod| 
+            mod.map{|meth, test| 
+              total_tests += test['tests']
+              total_passed += test['tests_passed']
+            }
+          }
+        }
+      elsif opts[:app] == "all"
+        puts "app testing not impletemented yet: all"
+      else
+        puts "app testing not impletemented yet: #{opts[:app]} #{opts[:format]}"
+      end
+      re["total_tests"] = total_tests
+      re["total_passed"] = total_passed
+      duration = ((Time.new - start_time) * 100000).to_i/100.0
+      re["performance"] = "#{((total_passed.to_f / total_tests).to_i) * 100}% in #{duration} ms"
+      puts re.send("to_#{opts[:format]}")
+    end
+
   end
+
 end

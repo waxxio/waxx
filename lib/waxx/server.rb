@@ -4,7 +4,6 @@
 module Waxx::Server
   extend self
 
-
   attr :last_load_time
   attr :queue
 
@@ -23,19 +22,18 @@ module Waxx::Server
     oid = arg.split("/").first.gsub(/[^0-9]/,"").to_i rescue 0
     ext = path =~ /\./ ? path.split(".").last.downcase : Conf['default']['ext']
     args = arg.split("/") rescue []
-    get = query_str_to_hash(params).freeze
+    get = Waxx::Http.query_string_to_hash(params).freeze
     debug "parse_uri.oid #{oid}"
     [meth, uri, app, act, oid, args, ext, get]
   end
 
   def parse_head(io)
-    Waxx.debug "parse_head"
     env = {} 
     head = ""
     while(e = io.gets)
       break if e.strip == ""
       head << e 
-      n, v = e.split(":")
+      n, v = e.split(":", 2)
       env[n] = v.strip
     end
     [env, head]
@@ -80,9 +78,8 @@ module Waxx::Server
       debug "data.size: #{data.size} #{env['Content-Type']}"
       case env['Content-Type']
         when /x-www-form-urlencoded/
-          post = query_str_to_hash(data).freeze
+          post = Waxx::Http.query_string_to_hash(data).freeze
         when /multipart/
-          debug "multipart"
           post = parse_multipart(env, data).freeze
         when /json/
           post = (JSON.parse(data)).freeze
@@ -122,20 +119,6 @@ module Waxx::Server
       end
     }
     post
-  end
-
-  def query_str_to_hash(str)
-    return {} if str.nil? or str == ""
-    begin
-      Hash[*str.split(/[;&]/).map{|da| Waxx::Http.unescape(da.strip).split("=",2)}.flatten]
-    rescue ArgumentError => e
-      debug e
-      if e.to_s =~ /odd number/
-        Hash[*str.split(/[;&]/).map{|da| Waxx::Http.unescape(da.strip).split("=",2)}.flatten,'']
-      else
-        raise e.to_s
-      end
-    end
   end
 
   def csrf?(x)
@@ -179,7 +162,7 @@ module Waxx::Server
       ::Thread.current[:status] = "working"
       start_time = Time.new
       r = io.gets
-      debug r
+      #debug r
       meth, uri, app, act, oid, args, ext, get = parse_uri(r)
       if meth == "GET" and Conf['file']['serve']
         return if serve_file(io, uri)
@@ -189,10 +172,15 @@ module Waxx::Server
       cookie = parse_cookie(env['Cookie'])
       begin
         usr = cookie['u'] ? JSON.parse(::App.decrypt(cookie['u'][0])) : default_cookies[:u] 
+      rescue => e
+        debug e.to_s, 1
+        usr = default_cookies[:u]
+      end
+      begin
         ua = cookie['a'] ? JSON.parse(::App.decrypt(cookie['a'][0])) : {} 
       rescue => e
-        debug e.to_s
-        debug e.backtrace
+        debug e.to_s, 1
+        ua = {}
       end
       post, data = parse_data(env, meth, io, head)
       req = Waxx::Req.new(env, data, meth, uri, get, post, cookie, start_time).freeze

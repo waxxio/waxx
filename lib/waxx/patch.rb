@@ -3,17 +3,26 @@
 
 # Patches to Ruby Classes
 class Date
+  # HTML format for a date
   def h
     to_s.h
   end
+  # Shortcut to format a date in strftime
   def f(format='%d-%b-%Y')
     strftime format
   end
 end
 class FalseClass
+  # HTML format "false"
   def h
     "false"
   end
+  # Format to a selected format (see TrueClass also)
+  #   Format Options:
+  #     yn: No
+  #     tf: False
+  #     icon: glyphicon (Bootstrap)
+  #     num: 0
   def f(format=:yn)
     case format.to_sym
       when :yn
@@ -28,33 +37,44 @@ class FalseClass
         raise "Unknown format in FalseClass.f: #{format}. Needs to be :yn, :tf, :icon, or :num."
     end
   end
+  # Show false as zero
   def to_i
     0
   end
 end
 class Hash
-  def _(k)
-    self[k] || self[k.to_s]
-  end
+  # Add an symbol/string indifferent access to a hash
   def /(k)
     self[k.to_sym] || self[k.to_s]
   end
 end
 class NilClass
+  # HTML format
   def h
     ""
   end
+  # Format nil as and empty string (2nd param)
+  # This is mostly for nil values out of the database
+  # that have a format f() called on them.
   def f(size=2, zero_as="", t=",", d=".")
     zero_as
   end
+
+  # Convert a nil to an empty symbol
   def to_sym
     "".to_sym
   end
 end
 class Numeric
+  # HTML format (self -- no escaping needed)
   def h
     self
   end
+  # Format a number
+  #   size: number of decimal places
+  #   zero_as: will display zero as "" (blank), "-" (dash), etc.
+  #   t: thousands seperator
+  #   d: decimal seperator
   def f(size=2, zero_as="", t=",", d=".")
     return zero_as if zero?
     num_parts = to_s.split(".")
@@ -64,9 +84,12 @@ class Numeric
   end
 end
 class String
+  # Escape HTML entities
   def h
     gsub(/[&\"<>]/, {'&'=>'&amp;', '"'=>'&quot;', '<'=>'&lt;', '>'=>'&gt;'})
   end
+  # Convert a string to a number and format 
+  # See Numeric.f()
   def f(size=2, zero_as="", t=",", d=".")
     return zero_as if to_f.zero?
     num_parts = split(".")
@@ -75,10 +98,26 @@ class String
     x << (d + (num_parts[1].to_s + "0000000")[0,size])
   end
 end
+class Time
+  # HTML format
+  def h
+    to_s.h
+  end
+  # Format time in strftime
+  def f(format='%d-%b-%Y')
+    strftime format
+  end
+end
 class TrueClass
   def h
     "true"
   end
+  # Format to a selected format (see FalseClass also)
+  #   Format Options:
+  #     yn: Yes
+  #     tf: True
+  #     icon: glyphicon (Bootstrap)
+  #     num: 1
   def f(format=:yn)
     case format.to_sym
       when :text
@@ -91,15 +130,9 @@ class TrueClass
         raise "Unknown format in TrueClass.f: #{format}. Needs to be :yn, :tf, :icon, or :num."
     end
   end
+
+  # Show true as 1
   def to_i
     1
-  end
-end
-class Time
-  def h
-    to_s.h
-  end
-  def f(format='%d-%b-%Y')
-    strftime format
   end
 end

@@ -38,6 +38,9 @@ module Waxx::App
   end
 
   def run(x, app, act, meth, args)
+    puts app.inspect
+    puts @runs
+    puts @runs[app]
     if @runs[app.to_sym][act][meth.to_sym]
       begin
         @runs[app.to_sym][act][meth.to_sym][x, *args]
@@ -81,9 +84,9 @@ module Waxx::App
     return true if acl.to_s == "user" and x.usr?
     case acl
     when String, Symbol
-      x.usr["grp"] and x.usr["grp"].include? acl.to_s
+      return (x.usr["grp"] and x.usr["grp"].include? acl.to_s)
     when Array
-      x.usr["grp"] and (x.usr["grp"] & acl).size > 0
+      return (x.usr["grp"] and (x.usr["grp"] & acl).size > 0)
     when Hash      
       g = nil
       if acl.keys.include? :any or acl.keys.include? :all
@@ -99,11 +102,12 @@ module Waxx::App
       return true if %w(* all any public).include? g.to_s
       return access?(x, g)
     when Proc
-      acl.call(x)
+      return acl.call(x)
     else
       x.log.error "No acl type recognized in App.access? for acl: #{acl.inspect}"
       false
     end
+    false
   end
 
   def log(x, cat, name, value=nil, id=nil)

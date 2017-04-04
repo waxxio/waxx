@@ -6,7 +6,7 @@ module App::Waxx
     threads: {
       desc: "Show a list of threads",
       acl: 'dev',
-      lambda{|x|
+      get: -> (x) {
 				x.res.headers["Content-Type"] = "text/plain"
 				Thread.list.each{|t|
 					next if t[:name] == "main"

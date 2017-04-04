@@ -3,7 +3,7 @@
 require 'optparse'
 
 command = ARGV[0]    
-commands = %w(on off buff start stop restart console get put post delete patch conf migrate migration deploy help)
+commands = %w(on off buff start stop restart console get put post delete patch conf migrate migration deploy test init help)
 if not commands.include? command
   puts "Enter a command: #{commands.join(", ")}"
   puts "waxx --help for all options"
@@ -12,6 +12,7 @@ end
 
 def parse_options(commands)
   options = {
+    sub_command: ARGV[1],
     port: 7700,
     base: ENV['PWD'],
     env: "active",
@@ -21,7 +22,9 @@ def parse_options(commands)
     user: ENV['USER'],
     group: nil,
     debug: false,
-    to: "stage"
+    to: "stage",
+    app: "all",
+    format: "yaml"
   }
   headline = ["Waxx", "The high-performance flexible framework"].compact.join(" - ")
   OptionParser.new do |opts|
@@ -77,7 +80,15 @@ def parse_options(commands)
     end
 
     opts.on("-D", "--debug", "Output debug messages (console only)","(default: off)") do
-      opts[:debug] = true
+      options[:debug] = true
+    end
+
+    opts.on("-a", "--app app_name or all", "The app to test.","(default: all)") do |app|
+      options[:app] = app
+    end
+
+    opts.on("-f", "--format", "The format of test results (yaml or json).","(default: yaml)") do |format|
+      options[:format] = format
     end
 
     opts.on_tail("-h", "--help", "Display this usage information.") do
@@ -91,7 +102,6 @@ end
 
 opts = parse_options(commands)
 require "#{opts[:base]}/lib/waxx"
-#require "#{opts[:base]}/lib/dante"
 Conf.load_yaml(opts[:base], opts[:env])
 Conf["opts"] = opts
 require "#{opts[:base]}/app/app"

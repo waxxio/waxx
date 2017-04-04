@@ -29,6 +29,23 @@ module Waxx::Http
     end
   end
 
+  def query_string_to_hash(str)
+    return {} if str.nil? or str.strip == ""
+    #Hash[*str.split(/[;&]/).map{|da| Waxx::Http.unescape(da.strip).split("=",2)}.flatten]
+    re = {}
+    str.strip.split(/[;&]/).each{|nv|
+      n, v = nv.split("=",2)
+      if n =~ /\[\]$/
+        n = n.sub(/\[\]$/,"")
+        re[n] ||= []
+        re[n] << unescape(v)
+      else
+        re[n] = unescape(v)
+      end
+    }
+    re
+  end
+
   Status = {
     "200"=>"OK",
     "206"=>"Partial Content",
