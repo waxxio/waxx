@@ -1,9 +1,12 @@
 # Waxx Copyright (c) 2016 ePark labs Inc. & Daniel J. Fitzpatrick <dan@eparklabs.com> All rights reserved.
 # Released under the Apache Version 2 License. See LICENSE.txt.
 
+# Supervises the thread pool
 module Waxx::Supervisor
   extend self
-
+ 
+  ##
+  # Check the thread pool and add or remove threads
   def check
     start_threads = Conf['server']['start_threads'] || Conf['server']['threads']
     max_threads = Conf['server']['max_threads'] || Conf['server']['threads']

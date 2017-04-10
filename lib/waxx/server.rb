@@ -1,15 +1,20 @@
 # Waxx Copyright (c) 2016 ePark labs Inc. & Daniel J. Fitzpatrick <dan@eparklabs.com> All rights reserved.
 # Released under the Apache Version 2 License. See LICENSE.txt.
 
+##
+# This is the core of waxx. 
+#   Process:
+#     start: A TCP server is setup listening on Conf['server']['host'] on port Conf['server']['port']
+#     setup_threads: The thread pool is created with dedicated database connection(s)
+#     loop: The requests are appended to the queue and the threads take one and:
+#     process_request: The request is parsed (query, string, multipart, etc). The "x" vairable is defined
+#     run_app: The proc/lambda is called with the x variable and any other optional variables
+#     finish: The response is sent to the client, background jobs are processed, the thread takes the next request
 module Waxx::Server
   extend self
 
   attr :last_load_time
   attr :queue
-
-  def content_types
-    Waxx::Http.content_types
-  end
 
   def parse_uri(r)
     Waxx.debug "parse_uri"
@@ -27,98 +32,11 @@ module Waxx::Server
     [meth, uri, app, act, oid, args, ext, get]
   end
 
-  def parse_head(io)
-    env = {} 
-    head = ""
-    while(e = io.gets)
-      break if e.strip == ""
-      head << e 
-      n, v = e.split(":", 2)
-      env[n] = v.strip
-    end
-    [env, head]
-  end
-
-  def parse_cookie(str)
-    Waxx.debug "parse_cookie"
-    re = {}
-    return re if str.nil? or str == ""
-    str.split(/[;,]\s?/).each do |pairs|
-      name, values = pairs.split('=',2)
-      next unless name and values
-      name = Waxx::Http.unescape(name)
-      vals = values.split('&').collect{|v| Waxx::Http.unescape(v) }
-      if re.has_key?(name)
-        debug "re has key"
-        if Array === re[name]
-          re[name].push vals
-        else
-          re[name] = [re[name], vals]
-        end
-      else  
-        re[name] = vals
-      end
-      re[name].flatten!
-    end
-    re.freeze
-    re
-  end
-
   def default_cookies
     {
       u: {uk: Waxx.random_string(20), la: Time.now.to_i},
       a: {la: Time.now.to_i}
     }
-  end
-
-  def parse_data(env, meth, io, head)
-    Waxx.debug "parse_data"
-    if %w(PUT POST PATCH).include? meth
-      data = io.read(env['Content-Length'].to_i)
-      debug "data.size: #{data.size} #{env['Content-Type']}"
-      case env['Content-Type']
-        when /x-www-form-urlencoded/
-          post = Waxx::Http.query_string_to_hash(data).freeze
-        when /multipart/
-          post = parse_multipart(env, data).freeze
-        when /json/
-          post = (JSON.parse(data)).freeze
-        else
-          post = data.freeze
-      end
-    else
-      post = {}.freeze
-      data = nil
-    end
-    [post, data]
-  end
-  
-  def parse_multipart(env, data)
-    boundary = env['Content-Type'].match(/boundary=(.*)$/)[1]
-    parts = data.split("--"+boundary+"\r\n")
-    post = {}
-    parts.each{|part|
-      next if part.strip == ""
-      begin
-        head, body = part.split("\r\n\r\n",2)
-        headers = Hash[*(head.split("\r\n").map{|hp| hp.split(":",2).map{|i| i.strip}}.flatten)]
-        cd = Hash[*("_=#{headers['Content-Disposition']}".split(";").map{|da| da.strip.gsub('"',"").split("=",2)}.flatten)]
-        if cd['filename']
-          post[cd['name']] = { 
-            filename: cd['filename'],
-            data: body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,""),
-            content_type: headers['Content-Type'],
-            headers: headers
-          }
-        else
-          post[cd['name']] = body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,"")
-        end
-      rescue => e
-        debug "Error parse_multipart: #{e}"
-        post["Error in parse_multipart (uid-#{rand})"] = e
-      end
-    }
-    post
   end
 
   def csrf?(x)
@@ -134,7 +52,7 @@ module Waxx::Server
 
   def default_response_headers(req, ext)
     {
-      "Content-Type" => (content_types()[ext.to_sym] || "text/html; charset=utf-8"),
+      "Content-Type" => (Waxx::Http.content_types()[ext.to_sym] || "text/html; charset=utf-8"),
       "App-Server" => "waxx/1.0"
     }
   end
@@ -158,18 +76,17 @@ module Waxx::Server
 
   def process_request(io, db)
     begin
-      Waxx.debug "process request"
+      Waxx.debug "process request", 4
       ::Thread.current[:status] = "working"
       start_time = Time.new
       r = io.gets
-      #debug r
+      Waxx.debug r, 9
       meth, uri, app, act, oid, args, ext, get = parse_uri(r)
       if meth == "GET" and Conf['file']['serve']
         return if serve_file(io, uri)
       end
-      debug "process_request #{oid}"
-      env, head = parse_head(io)
-      cookie = parse_cookie(env['Cookie'])
+      env, head = Waxx::Http.parse_head(io)
+      cookie = Waxx::Http.parse_cookie(env['Cookie'])
       begin
         usr = cookie['u'] ? JSON.parse(::App.decrypt(cookie['u'][0])) : default_cookies[:u] 
       rescue => e
@@ -182,7 +99,7 @@ module Waxx::Server
         debug e.to_s, 1
         ua = {}
       end
-      post, data = parse_data(env, meth, io, head)
+      post, data = Waxx::Http.parse_data(env, meth, io, head)
       req = Waxx::Req.new(env, data, meth, uri, get, post, cookie, start_time).freeze
       res = Waxx::Res.new(io, 200, default_response_headers(req, ext), [], [], [])
       jobs = []
@@ -356,15 +273,15 @@ module Waxx::Server
     server = TCPServer.new(Conf['server']['host'], Conf['server']['port'])
     puts "Listening on #{server.addr} with #{thread_count} threads (max_threads: #{Conf['server']['max_threads'] || Conf['server']['threads']})"
     while s = server.accept
-      debug "server.accept"
+      debug "server.accept", 7
       reload_code if Conf['debug']['auto_reload_code']
       @@queue << s
-      debug "q.size: #{@@queue.size}"
-      debug "q.waiting:  #{@@queue.num_waiting}"
+      debug "q.size: #{@@queue.size}", 7
+      debug "q.waiting:  #{@@queue.num_waiting}", 7
       # Check threads
       Waxx::Supervisor.check
     end
-    debug "end start"
+    debug "end start", 9
   end
 
   def stop(opts={})

@@ -52,7 +52,7 @@ module Waxx::Test
   end
 
   def mock_res(req)
-    Waxx::Res.new("", 200, App::Server.default_response_headers(req, "txt"), [], [], [])
+    Waxx::Res.new("", 200, Waxx::Server.default_response_headers(req, "txt"), [], [], [])
   end
 
   def x_user(req=mock_req, res=nil, db=nil) 
@@ -73,7 +73,8 @@ module Waxx::Test
 			[]
 		)
 	end
-  def x_nonuser(req, res, db=nil) 
+  def x_nonuser(req=mock_req, res=nil, db=nil) 
+    res ||= mock_res(req)
     Waxx::X.new(
 			req,
 			res,

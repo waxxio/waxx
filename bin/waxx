@@ -3,7 +3,7 @@
 require 'optparse'
 
 command = ARGV[0]    
-commands = %w(on off buff start stop restart console get put post delete patch conf migrate migration deploy test init help)
+commands = %w(on off buff start stop restart console get put post delete patch config migrate migration deploy test init help)
 if not commands.include? command
   puts "Enter a command: #{commands.join(", ")}"
   puts "waxx --help for all options"
@@ -30,7 +30,7 @@ def parse_options(commands)
   OptionParser.new do |opts|
     opts.summary_width = 25
     opts.banner = [headline, "\n\n",
-                 "Usage: waxx command [-b base_dir] [-p port] [-P pid_file] [-d] [-e env_name] [-l file] [-u user] [-g group]\n",
+                 "Usage: waxx command [-b base_dir] [-p port] [-P pid_file] [-d] [-e env_name] [-l file] [-u user] [-g group] [-f format]\n",
                  "Commands: #{commands.join(" ")}\n",
                  "    waxx help:\n"].compact.join("")
     opts.separator ""
@@ -79,15 +79,15 @@ def parse_options(commands)
       options[:group] = group
     end
 
-    opts.on("-D", "--debug", "Output debug messages (console only)","(default: off)") do
-      options[:debug] = true
+    opts.on("-D", "--debug", "Output debug messages (console only) 0-9","(default: 0)") do |level|
+      options[:debug] = level
     end
 
     opts.on("-a", "--app app_name or all", "The app to test.","(default: all)") do |app|
       options[:app] = app
     end
 
-    opts.on("-f", "--format", "The format of test results (yaml or json).","(default: yaml)") do |format|
+    opts.on("-f", "--format FORMAT", String, "The format output that supports it (tests and config) (yaml or json).","(default: yaml)") do |format|
       options[:format] = format
     end
 
@@ -106,12 +106,16 @@ Conf.load_yaml(opts[:base], opts[:env])
 Conf["opts"] = opts
 require "#{opts[:base]}/app/app"
 
-def debug(str)
-  Waxx.debug str
+def debug(str, level=3)
+  Waxx.debug str, level
 end
 
 if Waxx::Console::Command.respond_to? command
-  Waxx::Console::Command.send(command, opts)
+  if %w(get post put delete patch test deploy).include? command
+    Waxx::Console::Command.send(command, ARGV[1], opts)
+  else
+    Waxx::Console::Command.send(command, opts)
+  end
 else
   puts "The #{command} command has not been implemented yet. opts: #{opts.inspect} conf: #{Conf.data.inspect}"
 end

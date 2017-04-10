@@ -6,7 +6,7 @@
 require 'irb'
 
 module IRB # :nodoc:
-  def self.start_session(binding)
+  def self.xstart_session(binding)
     unless @__initialized
       args = ARGV
       ARGV.replace(ARGV.dup)
@@ -25,5 +25,12 @@ module IRB # :nodoc:
     catch(:IRB_EXIT) do
       irb.eval_input
     end
+  end
+  def self.start_session(context)
+		IRB.setup(nil)
+		workspace = IRB::WorkSpace.new(context)
+		irb = IRB::Irb.new(workspace)
+		IRB.conf[:MAIN_CONTEXT] = irb.context
+		irb.eval_input
   end
 end

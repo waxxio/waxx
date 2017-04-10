@@ -25,10 +25,14 @@ module Waxx::App
     end
   end
 
+  ##
+  # Set an app runner
   def []=(name, opts)
     @runs[name.to_sym] = opts
   end
 
+  ##
+  # Get an app runner
   def [](name)
     @runs[name.to_sym]
   end
@@ -37,10 +41,16 @@ module Waxx::App
     error(x, status:400, type:"request", title:"Cross Site Request Forgery Error", message:"The request is missing the correct CSRF token.", args: [])
   end
 
+  ##
+  # Run an app
+  #
+  # Can run the request method (get post put patch delete) or the generic "run".
+  #  1. x
+  #  2. app: The name of the app (Symbol)
+  #  3. act: The act to run (String or Symbol - type must match definition)
+  #  4, meth: The request method (Symbol)
+  #  5. args: The args to pass to the method (after x) (Array)
   def run(x, app, act, meth, args)
-    puts app.inspect
-    puts @runs
-    puts @runs[app]
     if @runs[app.to_sym][act][meth.to_sym]
       begin
         @runs[app.to_sym][act][meth.to_sym][x, *args]
@@ -114,5 +124,19 @@ module Waxx::App
     AppLog.log(x, cat:cat, name:name, value:value, id:id)
   end
 
-end
+  # Return a random string with no confusing chars (0Oo1iIl etc)
+  def random_password(size=10)
+    random_string(size, :chars, 'ABCDEFGHJKLMNPQRSTUVWXYabcdefghkmnpqrstuvwxyz23456789#%^&$*i-_+=')
+  end
 
+  def login_needed(x)
+    if x.ext == "json"
+    else
+      App::Html.render(x,
+        title: "Please Login",
+        #message: {type:"info", message: "Please login"},
+        content: App::Usr::Html.login(x, return_to: x.req.uri)
+      )
+    end
+  end
+end

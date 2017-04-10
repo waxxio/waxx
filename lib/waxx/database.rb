@@ -4,21 +4,63 @@
 module Waxx::Database
   extend self
 
-  def connection(conf=Conf['database'])
-    if Hash === conf
-      conn = PG.connect( dbname: conf['name'], user: conf['user'], password: conf['password'], host: conf['host'] )
+  def parse_uri(uri)
+    _, schema, user, pass, host, port, database, opts = uri.split(/^(\w*):\/\/(\w*):?(.*)@([\w\-]*):?([0-9]*)?\/([\w\-]*)\??(.*)?$/)
+   {
+     type: schema,
+     user: user,
+     pass: pass,
+     host: host,
+     database: database,
+     opts: Waxx::Http.query_string_to_hash(opts) 
+   }
+  end
+
+  def connect(conf=Conf['database'])
+    # Parse the conf string to load the correct db engine
+    engine = conf.split(":").first
+    case engine.downcase
+    when 'postgresql'
+      Waxx::Pg.connect(conf)
+    when 'mysql2'
+      # Parse the string 
+      uri = parse_uri(conf)
+      # Merge the opts into the params
+      config = {
+        username: uri/:user, 
+        password: uri/:pass, 
+        host: uri/:host, 
+        port: uri/:port, 
+        database: uri/:database
+      } 
+      config.merge!(uri/:opts)
+      Waxx::Mysql2.connect(config)
+    when 'sqlite3'
+      Waxx::Sqlite3.connect(conf.sub('sqlite3://',''))
+    when 'mongodb'
+      Waxx::Mongodb.connect(conf)
     else
-      conn = PG.connect( conf )
+      raise 'Unknown Dataabase Type'
     end
-    conn.type_map_for_results = PG::BasicTypeMapForResults.new conn
-    conn.type_map_for_queries = PG::BasicTypeMapForQueries.new conn
-    conn
+    #if Hash === conf
+    #  conn = PG.connect( dbname: conf['name'], user: conf['user'], password: conf['password'], host: conf['host'] )
+    #else
+    #  conn = PG.connect( conf )
+    #end
+    #conn.type_map_for_results = PG::BasicTypeMapForResults.new conn
+    #conn.type_map_for_queries = PG::BasicTypeMapForQueries.new conn
+    #conn
   end
   
+  # Define database connections in config.yaml or pass in a hash 
+  #   {
+  #     app: connection_string,
+  #     blog: connection_string
+  #   }
   def connections(dbs=Conf['databases'])
     c = {}
     dbs.each{|name, conf|
-      c[name.to_sym] = connection(conf)
+      c[name.to_sym] = connect(conf)
       c.define_singleton_method(name){self[name.to_sym]}
     }
     c

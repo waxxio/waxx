@@ -37,8 +37,10 @@ require_relative 'waxx/object'
 require_relative 'waxx/patch'
 require_relative 'waxx/pdf'
 require_relative 'waxx/process'
+require_relative 'waxx/mysql2'
+require_relative 'waxx/pg'
+require_relative 'waxx/sqlite3'
 require_relative 'waxx/server'
-require_relative 'waxx/session'
 require_relative 'waxx/supervisor'
 require_relative 'waxx/util'
 require_relative 'waxx/view'
@@ -52,3 +54,5 @@ $:.unshift "#{File.dirname(__FILE__)}/.."
 def debug(str, level=3)
   Waxx.debug(str, level)
 end
+
+

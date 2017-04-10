@@ -8,8 +8,8 @@ module Waxx::Http
     ContentTypes
   end
 
-  def ctype(t)
-    ContentTypes[t.to_sym]
+  def ctype(t, default="application/octet-stream")
+    ContentTypes[t.to_sym] || default
   end
 
   def time(t=Time.new.utc)
@@ -29,6 +29,18 @@ module Waxx::Http
     end
   end
 
+  def parse_head(io)
+    env = {}
+    head = ""
+    while(e = io.gets)
+      break if e.strip == ""
+      head << e
+      n, v = e.split(":", 2)
+      env[n] = v.strip
+    end
+    [env, head]
+  end
+
   def query_string_to_hash(str)
     return {} if str.nil? or str.strip == ""
     #Hash[*str.split(/[;&]/).map{|da| Waxx::Http.unescape(da.strip).split("=",2)}.flatten]
@@ -44,6 +56,81 @@ module Waxx::Http
       end
     }
     re
+  end
+
+  def parse_multipart(env, data)
+    boundary = env['Content-Type'].match(/boundary=(.*)$/)[1]
+    parts = data.split("--"+boundary+"\r\n")
+    post = {}
+    parts.each{|part|
+      next if part.strip == ""
+      begin
+        head, body = part.split("\r\n\r\n",2)
+        headers = Hash[*(head.split("\r\n").map{|hp| hp.split(":",2).map{|i| i.strip}}.flatten)]
+        cd = Hash[*("_=#{headers['Content-Disposition']}".split(";").map{|da| da.strip.gsub('"',"").split("=",2)}.flatten)]
+        if cd['filename']
+          post[cd['name']] = {
+            filename: cd['filename'],
+            data: body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,""),
+            content_type: headers['Content-Type'],
+            headers: headers
+          }
+        else
+          post[cd['name']] = body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,"")
+        end
+      rescue => e
+        debug "Error parse_multipart: #{e}"
+        post["Error in parse_multipart (uid-#{rand})"] = e
+      end
+    }
+    post
+  end
+
+  def parse_cookie(str)
+    Waxx.debug "parse_cookie"
+    re = {}
+    return re if str.nil? or str == ""
+    str.split(/[;,]\s?/).each do |pairs|
+      name, values = pairs.split('=',2)
+      next unless name and values
+      name = unescape(name)
+      vals = values.split('&').collect{|v| unescape(v) }
+      if re.has_key?(name)
+        debug "re has key"
+        if Array === re[name]
+          re[name].push vals
+        else
+          re[name] = [re[name], vals]
+        end
+      else
+        re[name] = vals
+      end
+      re[name].flatten!
+    end
+    re.freeze
+    re
+  end
+
+  def parse_data(env, meth, io, head)
+    Waxx.debug "parse_data"
+    if %w(PUT POST PATCH).include? meth
+      data = io.read(env['Content-Length'].to_i)
+      debug "data.size: #{data.size} #{env['Content-Type']}"
+      case env['Content-Type']
+        when /x-www-form-urlencoded/
+          post = query_string_to_hash(data).freeze
+        when /multipart/
+          post = parse_multipart(env, data).freeze
+        when /json/
+          post = (JSON.parse(data)).freeze
+        else
+          post = data.freeze
+      end
+    else
+      post = {}.freeze
+      data = nil
+    end
+    [post, data]
   end
 
   Status = {

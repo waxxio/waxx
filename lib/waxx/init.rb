@@ -1,18 +1,22 @@
+require 'securerandom'
+
 # Trap ^C 
 Signal.trap("INT") { 
-  puts "\n\nInstalation terminated by INT (^C)\n"
+  puts "\n\nInstallation terminated by INT (^C)\n"
   exit
 }
 
 # Trap `Kill `
 Signal.trap("TERM") {
-  puts "\n\nInstalation terminated by TERM\n"
+  puts "\n\nInstallation terminated by TERM\n"
   exit
 }
 
+# Command line init script to create a Waxx app
 module Waxx::Init
   extend self
 
+  # Defines the default YAML config file
   def default_input(x, opts)
   %(---
 server:
@@ -31,8 +35,8 @@ site:
 
 encryption:
   cipher: AES-256-CBC
-  key: 
-  iv:  
+  key: #{SecureRandom.base64(32)[0,32]}
+  iv: #{SecureRandom.base64(16)[0,16]} 
 
 cookie:
   user:
@@ -70,6 +74,7 @@ init:
   )
   end
 
+  # Some nice ASCII Art to get people excited
   def ascii_art
     # http://www.patorjk.com/software/taag/
     %(
@@ -88,6 +93,7 @@ init:
     )
   end
 
+  # The database definition to install
   def standard_sql
     {
       app_log: %(),
@@ -98,7 +104,9 @@ init:
       waxx: %(),
     }
   end
-
+  
+  # The sql to generate the website app.
+  # TODO: This may be better suited to its own init script
   def website_sql
     {
       website: %(),
@@ -108,6 +116,7 @@ init:
     }
   end
 
+  # Start the init process. Fired when `waxx init folder` is called
   def init(x, opts, input=nil)
     puts ""
     puts ascii_art
@@ -133,6 +142,7 @@ init:
     end
   end
 
+  # Make the Waxx::Root / app folder 
   def make_dir(x, name)
     puts ""
     if File.exist? name
@@ -148,6 +158,7 @@ init:
     end
   end
 
+  # Ask questions about the config
   def ask(x, input)
     get_site(x, input)
     get_server(x, input)
@@ -157,6 +168,7 @@ init:
     input
   end
 
+  # Get config options about the site
   def get_site(x, input)
     puts ""
     puts "Website/App options:"
@@ -172,6 +184,7 @@ init:
     input
   end
 
+  # Get config options about the server
   def get_server(x, input)
     puts ""
     puts "Server options:"
@@ -184,6 +197,7 @@ init:
     input
   end
 
+  # Get config options about the website
   def get_website(x, input)
     print "\nInstall the website app? (y|n) [#{input['init']['website'] ? 'y' : 'n'}]: " 
     website = $stdin.gets.chomp
@@ -200,6 +214,7 @@ init:
     input
   end
 
+  # Get config options about the db
   def get_db(x, input)
     default_db = "postgresql://#{`whoami`.chomp}@localhost/#{`whoami`.chomp}"
     puts ""
@@ -210,27 +225,18 @@ init:
     input['databases']['app'] = db == '' ? (input['databases']['app'] || default_db) : db
     puts "Create standard Waxx tables?"
     puts "These include: #{standard_sql.keys.join(", ")}."
-    print "Create tables (y|n) [y]"
+    print "  Create tables (y|n) [y]:"
     initdb = $stdin.gets.chomp
     initdb = initdb == '' or not (initdb =~ /[Yy]/).nil?
     input['init']['db'] = initdb
     input
   end
 
-  def set_random_key_iv(input)
-    OpenSSL::Random.seed(ENV.inspect)
-    random = Base64.encode64(OpenSSL::Random.pseudo_bytes(48))
-    input['encryption']['key'] = random[0,32]
-    input['encryption']['iv'] = random[33,16]
-    input
-  end
-
+  # Get config options about the encryption
   def get_key_iv(x, input)
-    if input['encryption']['key'].to_s.size != 32
-      set_random_key_iv(input)
-    end
-    puts "\nThe AES key and initiation vector for encryption."
-    puts "The default is a pseudo random generated with OpenSSL."
+    puts ""
+    puts "The AES key and initiation vector for encryption."
+    puts "The default was generated with SecureRandom.base64()."
     puts "Enter or paste 48 (or more) random characters."
     puts "See https://www.grc.com/passwords.htm for inspriation."
     puts "[#{input['encryption']['key']}#{input['encryption']['iv']}] "
@@ -242,15 +248,22 @@ init:
     end
     input
   end
-
+   
+  # Install Waxx in the target folder. Copy skel and update the config file
   def install_waxx(x, input, opts)
     skel_folder = "#{File.dirname(__FILE__)}/../../skel/"
     puts ""
     puts "Copying files from #{skel_folder} to #{opts/:sub_command}/"
     puts `rsync -av #{skel_folder} #{opts/:sub_command}/`
+    puts ""
     puts "Installing dev config"
     input.delete "init"
     File.open("#{opts/:sub_command}/opt/dev/config.yaml","w"){|f| f << input.to_yaml}
+    if input/:init/:db
+      puts ""
+      puts "Creating database tables"
+      create_tables(x, input)
+    end
     puts ""
     puts "Waxx installed successfully."
     puts "cd into #{opts/:sub_command} and run `waxx on` to get your waxx on"
