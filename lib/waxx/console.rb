@@ -170,10 +170,10 @@ module Waxx::Console
       total_passed = 0
       if target == "waxx"
         tests = []
-        Dir.entries(opts[:base] + '/lib/waxx/tests').each{|f|
+        Dir.entries(opts[:base] + '/test').each{|f|
           next if f =~ /^\./
           tests << f.sub(/\.rb$/,"")
-          path = opts[:base] + '/lib/waxx/tests/' + f
+          path = opts[:base] + '/test/' + f
           puts path
           require path
         }

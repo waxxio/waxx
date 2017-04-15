@@ -1,12 +1,8 @@
 # Waxx Copyright (c) 2016 ePark labs Inc. & Daniel J. Fitzpatrick <dan@eparklabs.com> All rights reserved.
 # Released under the Apache Version 2 License. See LICENSE.txt.
 
-##
-# The PostgreSQL Object methods 
-module Waxx::Pg
-  extend self
+module Waxx::Object
 
-  attr :app
   attr :db
   attr :table
   attr :columns
@@ -14,27 +10,13 @@ module Waxx::Pg
   attr :joins
   attr :orders
 
-  ##
-  # Connect to a postgresql database
-  #
-  # Set in config.yaml: 
-  #   databases:
-  #     app: postgresql://user:pass@host:port/database
-  def connect(str)
-    conn = PG.connect( str )
-    conn.type_map_for_results = PG::BasicTypeMapForResults.new conn
-    conn.type_map_for_queries = PG::BasicTypeMapForQueries.new conn
-    conn
-  end
-
-  def init(app:nil, db:"app", table:nil, pk:"id", cols:nil)
-    @app ||= (app || App.table_from_class(name)).to_sym
-    @db ||= db.to_sym
-    @table ||= (table || App.table_from_class(name)).to_sym
-    @pkey ||= pk.to_sym
-    @columns ||= {}
-    @joins ||= {}
-    @orders ||= {}
+  def init(db:"app", table:nil, pk:"id", cols:nil)
+    @db = db.to_sym
+    @table = (table || App.table_from_class(name)).to_sym
+    @pkey = pk.to_sym
+    @columns = {}
+    @joins = {}
+    @orders = {}
     has(cols) if cols
   end
 
@@ -50,17 +32,16 @@ module Waxx::Pg
       @orders[n] = v[:order] || n
       @orders["_#{n}".to_sym] = v[:_order] || "#{n} DESC"
       @pkey = n if v[:pkey]
-      build_joins(n, v[:is])
-    }
-  end
-
-  def build_joins(n, col_is)
-    return if col_is.nil?
-    [col_is].flatten.each{|str| 
-      r, tc = str.split(":")
-      t, c = tc.split(".")
-      j = c =~ /\+$/ ? "LEFT" : "INNER"
-      @joins[r] = {table: @table, col: n.to_s.strip, join: j.to_s.strip, foreign_table: t.to_s.strip, foreign_col: c.to_s.strip.sub('+','')}
+      if v[:is]
+        r, tc = v[:is].split(":")
+        t, c = tc.split(".")
+        @joins[r] = {join: "INNER", table: t, col: c}
+      end
+      if v[:has]
+        r, tc = v[:has].split(":")
+        t, c = tc.split(".")
+        @joins[r] = {join: "LEFT", table: t, col: c}
+      end
     }
   end
 
@@ -79,13 +60,17 @@ module Waxx::Pg
   end
 
   def runs(opts=nil)
-    init if @app.nil?
-    return App[@app] if opts.nil?
-    App[@app] = opts
+    init if @table.nil?
+    return App[@table] if opts.nil?
+    App[@table] = opts
   end
 
   def run(x, act, meth, *args)
-    App[@app][act.to_sym][meth.to_sym][x, *args]
+    App[@table][act.to_sym][meth.to_sym][x, *args]
+  end
+
+  def render(x, meth, *args)
+    const_get(x.ext.capitalize).send(meth, x, *args)
   end
 
   def parse_select(select, view)

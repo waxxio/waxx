@@ -20,6 +20,7 @@ module Waxx
 
   ##
   # The X Struct gets instanciated with each request (x)
+  # ```
   #   x.req   # The request object (Instance of Waxx::Req)
   #   x.res   # The response object (Instance of Waxx::Res)
   #   x.usr   # The user session cookie 
@@ -60,6 +61,7 @@ module Waxx
   #   x.jobs  # An array of jobs
   #           # Jobs are added as procs with optional arguments (proc, *args).
   #   x.job(->(x, id){ App::Email.deliver(x, id) }, x, id) 
+  # ```
   X = Struct.new(
     :req,
     :res,

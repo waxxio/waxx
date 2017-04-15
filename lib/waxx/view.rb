@@ -24,6 +24,18 @@ module Waxx::View
     @columns[c.to_sym]
   end
 
+
+  ##
+  # Columnas on a view can be defined in multiple ways:
+  #
+  #   has(
+  #     :id,
+  #     :name,  
+  #     "company_name:company.name", # name:rel_name.col_name  "name" is the name of the col in the query, rel_name is the join table as defined in object, col_name is the column in the foreign table 
+  #     [:creator, {table: "person", sql_select: "first_name || ' ' || last_name", label: "Creator"}]  # Array: [name, column (Hash)] 
+  #     {modifier: {table: "person", sql_select: "first_name || ' ' || last_name", label: "Creator"}}
+  #
+  # 
   def has(*cols)
     init if @object.nil?
     #@joins = {}
@@ -31,45 +43,19 @@ module Waxx::View
     cols.each{|c|
       n = col = nil
       case c
+      # Get the col from the object
       when Symbol
         n = c
         col = @object[c]
+      # A related col (must be defined in the related object)
       when String
-        n, rel_name, col_name = parse_col(c)
-        # Look in the primary and related objects for relations
-        j = @object.joins/rel_name || @relations.values.select{|rel| 
-          #debug "REL: #{rel}"
-          !rel[rel_name].nil?
-        }.first/rel_name
-        #debug "j:#{j.inspect}, n: #{n}, rel: #{rel_name}, col: #{col_name}"
-        begin
-          col = (App.get_const(App, j/:table)/col_name).dup
-        rescue NoMethodError => e
-          debug "ERROR: NoMethodError: #{rel_name} does not define col: #{col_name}"
-          raise e
-        rescue NameError, TypeError => e
-          debug "ERROR: Name or Type Error: #{rel_name} does not define col: #{col_name}"
-          raise e
-        end
-        begin
-          @relations[rel_name] ||= (App.get_const(App, j/:table)).joins
-          col[:table] = rel_name 
-        rescue NoMethodError => e
-          if col.nil?
-            debug "col is nil"
-          else
-            debug "ERROR: App[#{col[:table]}] has no joins in View.has"
-          end
-          raise e
-        end
+        n, col = string_to_col(c)
+      # A custom col [name, col] col is a Hash
       when Array
-        n = c[0]
-        col = c[1]
+        n, col = c
+      # A custom col {name: col}, col is a Hash
       when Hash
-        c.map{|nm,val|
-          n = nm
-          col = val
-        }
+        n, col = c.to_a[0]
       end
       if col.nil?
         debug "Column #{c} not defined in #{@object}."
@@ -77,9 +63,52 @@ module Waxx::View
       end
       #debug @relations.inspect
       #TODO: Deal with relations that have different names than the tables
-      #col[:views] << self rescue col[:views] = [self]
+      col[:views] << self rescue col[:views] = [self]
       @columns[n.to_sym] = col
     }
+    @joins ||= Hash[@relations.map{|n, r| [n, %(#{r/:join} JOIN #{r/:foreign_table} AS #{n} ON #{r/:table}.#{r/:col} = #{n}.#{r/:foreign_col})] }]
+  end
+
+  ##
+  # Column defined as a string in the format: name:foreign_table.foreign_col 
+  # Converted to SQL: foreign_table.foreign_col AS name
+  # Also adds entries in the @relations hash. @relations drive the SQL join statement
+  # Joins are defined in the primary object of this view.
+  def string_to_col(str)
+    n, rel_name, col_name = parse_col(str)
+    # Look in the primary and related objects for relations
+    j = @object.joins/rel_name || @relations.values.map{|foreign_rel| 
+      #debug "REL: #{foreign_rel}"
+      o = App.get_const(App, foreign_rel/:foreign_table)
+      #debug o
+      #debug o.joins.inspect
+      o.joins/rel_name
+    }.compact.first
+    #debug "j:#{j.inspect}, n: #{n}, rel: #{rel_name}, col: #{col_name}"
+    begin
+      col = (App.get_const(App, j/:foreign_table)/col_name).dup
+      col[:table] = rel_name
+    rescue NoMethodError => e
+      debug "ERROR: NoMethodError: #{rel_name} does not define col: #{col_name}"
+      raise e
+    rescue NameError, TypeError => e
+      debug "ERROR: Name or Type Error: #{rel_name} does not define col: #{col_name}"
+      raise e
+    end
+    begin
+      @relations[rel_name] ||= j #(App.get_const(App, j/:table)).joins
+      #col[:table] = rel_name 
+    rescue NoMethodError => e
+      if col.nil?
+        debug "col is nil"
+      else
+        debug "ERROR: App[#{col[:table]}] has no joins in View.has"
+      end
+      raise e
+    end
+    #debug n
+    #debug col
+    [n, col]
   end
 
   def parse_col(str)
