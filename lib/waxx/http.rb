@@ -41,21 +41,19 @@ module Waxx::Http
     [env, head]
   end
 
-  def query_string_to_hash(str)
-    return {} if str.nil? or str.strip == ""
-    #Hash[*str.split(/[;&]/).map{|da| Waxx::Http.unescape(da.strip).split("=",2)}.flatten]
-    re = {}
+  def query_string_to_hash(str, base={})
+    return base if str.nil? or str.strip == ""
     str.strip.split(/[;&]/).each{|nv|
-      n, v = nv.split("=",2)
+      n, v = nv.split("=",2).map{|s| unescape(s)}
       if n =~ /\[\]$/
         n = n.sub(/\[\]$/,"")
-        re[n] ||= []
-        re[n] << unescape(v)
+        base[n] ||= []
+        base[n] << v
       else
-        re[n] = unescape(v)
+        base[n] = v
       end
     }
-    re
+    base
   end
 
   def parse_multipart(env, data)

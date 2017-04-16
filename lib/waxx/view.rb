@@ -253,4 +253,8 @@ module Waxx::View
   def not_found(x, data:{}, message: {type: "NotFound", message:"The record you requested was not found."}, as:x.ext)
     self.const_get(as.to_s.capitalize).not_found(x, data:{}, message: message)
   end
+
+  def debug(str, level=3)
+    Waxx.debug(str, level)
+  end
 end

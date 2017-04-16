@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Libs
+# Libs (core & std lib)
 require 'socket'
 require 'thread'
 require 'openssl'
@@ -23,6 +23,9 @@ require 'fileutils'
 require 'yaml'
 # Require ruby files in waxx/ (except irb stuff)
 require_relative 'waxx/waxx'
+require_relative 'waxx/x'
+require_relative 'waxx/req'
+require_relative 'waxx/res'
 require_relative 'waxx/app'
 require_relative 'waxx/conf'
 require_relative 'waxx/console'
@@ -37,8 +40,8 @@ require_relative 'waxx/object'
 require_relative 'waxx/patch'
 require_relative 'waxx/pdf'
 require_relative 'waxx/process'
-require_relative 'waxx/mysql2'
 require_relative 'waxx/pg'
+require_relative 'waxx/mysql2'
 require_relative 'waxx/sqlite3'
 require_relative 'waxx/server'
 require_relative 'waxx/supervisor'
@@ -48,11 +51,5 @@ require_relative 'waxx/view'
 
 $:.unshift "#{File.dirname(__FILE__)}/.." 
 
-##
-# Call debug() from anywhere
-# This is a global method
-def debug(str, level=3)
-  Waxx.debug(str, level)
-end
 
 

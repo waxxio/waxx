@@ -25,5 +25,9 @@ module Waxx::Html
     Waxx::Http.qs(v)
   end
 
+  def debug(str, level=3)
+    Waxx.debug(str, level)
+  end
+
 end
 
