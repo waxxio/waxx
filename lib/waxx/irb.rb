@@ -5,8 +5,11 @@
 
 require 'irb'
 
-module IRB # :nodoc:
-  def self.xstart_session(binding)
+# Jump into an IRB session with `waxx console`
+module IRB
+  ##
+  # Start an IRB session for Ruby < 2.4
+  def self.start_session_old(binding)
     unless @__initialized
       args = ARGV
       ARGV.replace(ARGV.dup)
@@ -26,11 +29,16 @@ module IRB # :nodoc:
       irb.eval_input
     end
   end
+
+  ##
+  # Start an IRB session
+  # `waxx console`
   def self.start_session(context)
-		IRB.setup(nil)
-		workspace = IRB::WorkSpace.new(context)
-		irb = IRB::Irb.new(workspace)
-		IRB.conf[:MAIN_CONTEXT] = irb.context
-		irb.eval_input
+    return self.start_session_old(context) if RUBY_VERSION.to_f < 2.4
+    IRB.setup(nil)
+    workspace = IRB::WorkSpace.new(context)
+    irb = IRB::Irb.new(workspace)
+    IRB.conf[:MAIN_CONTEXT] = irb.context
+    irb.eval_input
   end
 end

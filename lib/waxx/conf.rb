@@ -14,7 +14,7 @@
 
 ##
 # The global Conf variable. ex:  Conf['site']['name']
-# Data is set in etc/{env}/config.yaml
+# Data is set in opt/env/config.yaml
 module Conf
   extend self
 

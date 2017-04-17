@@ -28,14 +28,14 @@ module Waxx::Process
     end
 
     # Accepts options for the process
-    # @runner.with_options { |opts| opts.on(...) }
+    # `@runner.with_options { |opts| opts.on(...) }`
     def with_options(&block)
       @with_options = block
     end
 
     # Executes the runner based on options
-    # @runner.execute
-    # @runner.execute { ... }
+    # `@runner.execute`
+    # `@runner.execute { ... }`
     def execute(opts={}, &block)
       parse_options
       self.options.merge!(opts)

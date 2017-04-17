@@ -101,13 +101,15 @@ def parse_options(commands)
 end
 
 opts = parse_options(commands)
-require "#{opts[:base]}/lib/waxx"
+#if File.exist? "#{opts[:base]}/lib/waxx"
+#  require "#{opts[:base]}/lib/waxx"
+#else
+  require 'waxx'
+#end
 Conf.load_yaml(opts[:base], opts[:env])
 Conf["opts"] = opts
-require "#{opts[:base]}/app/app"
-
-def debug(str, level=3)
-  Waxx.debug str, level
+unless %w(init help).include? command
+  require "#{opts[:base]}/app/app"
 end
 
 if Waxx::Console::Command.respond_to? command

@@ -23,6 +23,7 @@ require 'fileutils'
 require 'yaml'
 # Require ruby files in waxx/ (except irb stuff)
 require_relative 'waxx/waxx'
+require_relative 'waxx/version'
 require_relative 'waxx/x'
 require_relative 'waxx/req'
 require_relative 'waxx/res'

@@ -109,9 +109,15 @@ module Waxx::Pg
     where = ["#{@table}.#{@pkey} = $1",id] if id and where.nil?
     # Block SQL injection in order clause. All order options must be defined in @orders.
     if order
+      # Look in self orders
       if not @orders/order
-        debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
-        order = @pkey
+        # Look in the view's columns
+        if view and view.orders/order
+          order = view.orders/order
+        else
+          debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
+          order = @pkey
+        end
       else
         order = @orders/order 
       end

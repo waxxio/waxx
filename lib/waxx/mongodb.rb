@@ -1,7 +1,7 @@
 # Waxx Copyright (c) 2016 ePark labs Inc. & Daniel J. Fitzpatrick <dan@eparklabs.com> All rights reserved.
 # Released under the Apache Version 2 License. See LICENSE.txt.
 
-module Waxx::Object
+module Waxx::Mongodb
 
   attr :db
   attr :table

@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+##
+# Waxx is a high-performance Ruby web application development framework. See https://www.waxx.io/ for more information.
 module Waxx
   extend self
 
-  Version = "0.1.0"
+  # TODO: Figure this out based on the waxx command opts
   Root = Dir.pwd
 
   # A few helper functions
