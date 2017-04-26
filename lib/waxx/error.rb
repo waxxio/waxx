@@ -18,7 +18,7 @@ module Waxx::Error
       "ENV:\n\n#{x.req.env.map{|n,v| "#{n}: #{v}"}.join("\n")}"
     ].join("\n\n")
 
-    if App['debug']['on_screen']
+    if Waxx['debug']['on_screen']
       x << "<pre>#{er}</pre>"
     else
       get_const(App, x.ext).get(x,
@@ -29,9 +29,9 @@ module Waxx::Error
           <p>Sorry for the inconvenience.</p>"
       )
     end
-    if App['debug']['send_email'] and App['debug']['email']
-      to_email = App['debug']['email']
-      from_email = App['site']['support_email']
+    if Waxx['debug']['send_email'] and Waxx['debug']['email']
+      to_email = Waxx['debug']['email']
+      from_email = Waxx['site']['support_email']
       subject = "[Bug] #{App['site']['name']} #{x.meth}:#{x.uri}"
       body = er
       begin

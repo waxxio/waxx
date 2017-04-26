@@ -23,6 +23,18 @@ module Waxx
   # A few helper functions
 
   ##
+  # Shortcut to Waxx::Waxx variables
+  def [](str)
+    Waxx::Conf[str]
+  end
+
+  ##
+  # Shortcut to Waxx::Waxx variables
+  def /(str)
+    Waxx::Conf/str
+  end
+
+  ##
   # Output to the log
   #   Waxx.debug(
   #     str,          # The text to output
@@ -30,7 +42,7 @@ module Waxx
   #   )
   #   # Set the level in config.yaml (debug.level) of what level or lower to ouutput
   def debug(str, level=3)
-    puts str.to_s if level <= Conf['debug']['level'].to_i
+    puts str.to_s if level <= Waxx['debug']['level'].to_i
   end
 
   ##

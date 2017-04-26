@@ -104,13 +104,13 @@ module Waxx::Sqlite3
   end
 
   def get(x, select:nil, id:nil, joins:nil,  where:nil, having:nil, order:nil, limit:nil, offset:nil, view:nil, &blk)
-    debug "object.get"
+    Waxx.debug "object.get"
     select = parse_select(select, view)
     where = ["#{@table}.#{@pkey} = ?",id] if id and where.nil?
     # Block SQL injection in order clause. All order options must be defined in @orders.
     if order
       if not @orders/order
-        debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
+        Waxx.debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
         order = @pkey
       else
         order = @orders/order 
@@ -121,7 +121,7 @@ module Waxx::Sqlite3
     end
     q = {select:select, joins:joins, where:where, having:having, order:order, limit:limit, offset:offset}
     yield q if block_given?
-    debug "object.get.select: #{q[:select]}"
+    Waxx.debug "object.get.select: #{q[:select]}"
     return [] if q[:select].empty?
     sql = []
     sql << "SELECT #{q[:select] || "*"}"
@@ -135,8 +135,8 @@ module Waxx::Sqlite3
     vals << q[:where][1] if q[:where] and q[:where][1]
     vals << q[:having][1] if q[:having] and q[:having][1]
     #[sql.join(" "), vals.flatten]
-    debug sql
-    debug vals.join(", ")
+    Waxx.debug sql
+    Waxx.debug vals.join(", ")
     x.db[@db].execute(sql.join(" "), vals.flatten)
   end
 
@@ -169,8 +169,8 @@ module Waxx::Sqlite3
     }
     sql << names.join(",")
     sql << ") VALUES (#{vars.join(",")})"
-    debug(sql, 4)
-    debug(vals, 4)
+    Waxx.debug(sql, 4)
+    Waxx.debug(vals, 4)
     x.db[@db].execute(sql, vals) 
     new_id = x.db[@db].last_insert_row_id
     x.db[@db].execute("SELECT #{returning || ret.join(",")} FROM #{@table} WHERE #{@pkey} = ?", [new_id]).first
@@ -188,9 +188,9 @@ module Waxx::Sqlite3
     vals = []
     ret = []
     i = 1
-    debug "data: #{data}"
+    Waxx.debug "data: #{data}"
     cols.each{|n,v|
-      debug "col: #{n}: #{v.inspect}"
+      Waxx.debug "col: #{n}: #{v.inspect}"
       if data.has_key? n.to_s or data.has_key? n.to_sym
         set << "#{n} = ?"
         vals << cast(v, data/n)
@@ -201,8 +201,8 @@ module Waxx::Sqlite3
     sql << set.join(",")
     sql << " WHERE #{@pkey} = ? #{where} RETURNING #{returning || ret.join(",")}"
     vals << id
-    debug(sql)
-    debug(vals)
+    Waxx.debug(sql)
+    Waxx.debug(vals)
     x.db[@db].execute(sql, vals).first 
   end
   alias patch put

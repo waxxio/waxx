@@ -1,20 +1,22 @@
 server:
-  name: "Waxx Server"
-  start_threads: 2
-  max_threads: 10
+  host: 10.121.212.10
+  port: 7777
+  processes: 1
+  min_threads: 2
+  max_threads: 4
   idle_thread_timeout: 300
   log_dir: log
   pid_dir: tmp/pids
 
 site:
-  name: Waxx Demo
-  support_email: demo@waxx.io
-  url: https://demo.waxx.io/
+  name: Waxx
+  support_email: support@waxx.io
+  url: https://dev.waxx.io/
 
 encryption:
   cipher: AES-256-CBC
-  key: A-32-character-string. CHANGE THIS!
-  iv: A 16-character-string. CHANGE THIS!
+  key: 6+j8f3wC.M+eS+xF1Xth~uBFP/W<&^12
+  iv:  2x%)slli]IIR7;#S
 
 cookie:
   user:
@@ -31,16 +33,24 @@ debug:
   level: 9
   on_screen: true
   send_email: false
-  email: you@example.com
+  email: dan@eparklabs.com
   auto_reload_code: true
 
-databases:
-  app: postgresql://user:pass@host:5432/database
+xdatabases:
+  app: postgresql://waxx@localhost:5432/waxx
 
 default:
-  app: website
+  app: welcome
   act: index
   ext: html
+
+smtp:
+  server: aeromail.io
+  user: system@waxx.io
+  pass: gQBuv4akNRuq
+  port: 465
+  tls: true
+  authentication: plain
 
 file:
   serve: true

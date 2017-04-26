@@ -68,10 +68,10 @@ module Waxx::App
       begin
         @runs[app.to_sym][act][meth.to_sym][x, *args]
       rescue ArgumentError => e
-        if Conf['debug']['on_screen']
+        if Waxx['debug']['on_screen']
           error(x, status: 405, type: "request", title: "Argument Error", message: "#{e.to_s}\n\n#{e.backtrace.join("\n")}")
         else
-          debug e
+          Waxx.debug e
           App.not_found(x)
         end
       end
@@ -79,10 +79,10 @@ module Waxx::App
       begin
         @runs[app.to_sym][act][:run][x, *args]
       rescue ArgumentError => e
-        if Conf['debug']['on_screen']
+        if Waxx['debug']['on_screen']
           error(x, status: 405, type: "request", title: "Argument Error", message: "#{e.to_s}\n\n#{e.backtrace.join("\n")}")
         else
-          debug e
+          Waxx.debug e
           App.not_found(x)
         end
       end
@@ -138,7 +138,7 @@ module Waxx::App
     when Proc
       return acl.call(x)
     else
-      debug "No acl type recognized in App.access? for acl: #{acl.inspect}", 1
+      Waxx.debug "No acl type recognized in App.access? for acl: #{acl.inspect}", 1
       false
     end
     false

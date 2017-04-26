@@ -1,7 +1,6 @@
 module App::AppLog 
   extend Waxx::Object
   extend self
-  init
 
   def log(x, cat:'', name:'', value:'', id:nil)
     x.db.exec("INSERT INTO app_log

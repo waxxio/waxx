@@ -2,20 +2,15 @@ module App::Usr::List
   extend Waxx::View
   extend self
 
-  @joins = {
-    person:"LEFT JOIN person ON usr.person_id = person.id",
-    company:"LEFT JOIN company ON person.company_id = company.id"
-  }
-
   has(
     :id,
     :usr_name,
     :last_login_date,
     :failed_login_count,
-    "person_id: person.id",
-    "person.first_name",
-    "person.last_name",
-    "company_name: company.company_name"
+    #"person_id: person.id",
+    #"person.first_name",
+    #"person.last_name",
+    #"company_name: company.company_name"
   )
 
   module Html

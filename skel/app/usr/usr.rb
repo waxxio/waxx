@@ -1,13 +1,9 @@
-require 'app/person/person'
-require 'app/company/company'
-
 module App::Usr 
-  extend Waxx::Object
+  extend Waxx::Pg
   extend self
 
    has(
     id:                   {type: "integer",label:"ID"},
-    person_id:            {pkey: true, type: "integer",label:"Person ID", is:"person:person.id"},
     usr_name:             {type: "character",label:""},
     password_sha256:      {type: "character",label:""},
     salt_aes256:          {type: "character",label:""},

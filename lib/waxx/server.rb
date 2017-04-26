@@ -4,7 +4,7 @@
 ##
 # This is the core of waxx. 
 #   Process:
-#     start: A TCP server is setup listening on Conf['server']['host'] on port Conf['server']['port']
+#     start: A TCP server is setup listening on Waxx['server']['host'] on port Waxx['server']['port']
 #     setup_threads: The thread pool is created with dedicated database connection(s)
 #     loop: The requests are appended to the queue and the threads take one and:
 #     process_request: The request is parsed (query, string, multipart, etc). The "x" vairable is defined
@@ -21,14 +21,14 @@ module Waxx::Server
     meth, uri, ver = r.split(" ")
     path, params = uri.split("?", 2)
     _, app, act, arg = path.split(".").first.split("/", 4)
-    app = Conf['default']['app'] if app.to_s == ''
+    app = Waxx['default']['app'] if app.to_s == ''
     act = App[app.to_sym][:default] if act.to_s == '' and App[app.to_sym]
-    act = Conf['default']['act'] if act.to_s == ''
+    act = Waxx['default']['act'] if act.to_s == ''
     oid = arg.split("/").first.gsub(/[^0-9]/,"").to_i rescue 0
-    ext = path =~ /\./ ? path.split(".").last.downcase : Conf['default']['ext']
+    ext = path =~ /\./ ? path.split(".").last.downcase : Waxx['default']['ext']
     args = arg.split("/") rescue []
     get = Waxx::Http.query_string_to_hash(params).freeze
-    debug "parse_uri.oid #{oid}"
+    Waxx.debug "parse_uri.oid #{oid}"
     [meth, uri, app, act, oid, args, ext, get]
   end
 
@@ -58,7 +58,9 @@ module Waxx::Server
   end
   
   def serve_file(io, uri)
-    file = "#{Conf['file']['path']}#{uri.gsub("..","").split("?").first}"
+    Waxx.debug "serve_file", 9
+    return false if Waxx['file'].nil?
+    file = "#{Waxx['file']['path']}#{uri.gsub("..","").split("?").first}"
     file = file + "/index.html" if File.directory?(file)
     return false unless File.exist? file
     ext = file.split(".").last
@@ -80,23 +82,27 @@ module Waxx::Server
       ::Thread.current[:status] = "working"
       start_time = Time.new
       r = io.gets
-      Waxx.debug r, 9
+      #Waxx.debug r, 9
       meth, uri, app, act, oid, args, ext, get = parse_uri(r)
-      if meth == "GET" and Conf['file']['serve']
+      #Waxx.debug([meth, uri, app, act, oid, args, ext, get].join(" "), 8)
+      if meth == "GET" and Waxx['file'] and Waxx['file']['serve']
+        #Waxx.debug "server_file"
         return if serve_file(io, uri)
       end
+      #Waxx.debug "no-file"
       env, head = Waxx::Http.parse_head(io)
+      #Waxx.debug head, 9
       cookie = Waxx::Http.parse_cookie(env['Cookie'])
       begin
         usr = cookie['u'] ? JSON.parse(::App.decrypt(cookie['u'][0])) : default_cookies[:u] 
       rescue => e
-        debug e.to_s, 1
+        Waxx.debug e.to_s, 1
         usr = default_cookies[:u]
       end
       begin
         ua = cookie['a'] ? JSON.parse(::App.decrypt(cookie['a'][0])) : {} 
       rescue => e
-        debug e.to_s, 1
+        Waxx.debug e.to_s, 1
         ua = {}
       end
       post, data = Waxx::Http.parse_data(env, meth, io, head)
@@ -136,15 +142,15 @@ module Waxx::Server
   def set_cookies(x)
     return if x.usr/:no_cookies
     x.res.cookie( 
-      name: Conf['cookie']['user']['name'], 
+      name: Waxx['cookie']['user']['name'], 
       value: App.encrypt(x.usr.to_json), 
-      secure: Conf['cookie']['user']['secure']
+      secure: Waxx['cookie']['user']['secure']
     )
     x.res.cookie( 
-      name: Conf['cookie']['agent']['name'], 
+      name: Waxx['cookie']['agent']['name'], 
       value: App.encrypt(x.ua.to_json), 
-      expires: Time.now + (Conf['cookie']['agent']['expires_years'].to_i * 31536000), 
-      secure: Conf['cookie']['agent']['secure']
+      expires: Time.now + (Waxx['cookie']['agent']['expires_years'].to_i * 31536000), 
+      secure: Waxx['cookie']['agent']['secure']
     )
   end
 
@@ -152,7 +158,7 @@ module Waxx::Server
     # Set last activity
     x.usr['la'] = Time.new.to_i
     set_cookies(x)
-    debug "Process time: #{(Time.new - x.req.start_time)*1000} ms."
+    Waxx.debug "Process time: #{(Time.new - x.req.start_time)*1000} ms."
     x.res.complete
     io.close
     x.jobs.each{|job| 
@@ -167,7 +173,7 @@ module Waxx::Server
     x.res.status = 503
     puts "FATAL ERROR: #{e}\n#{e.backtrace}"
     report = "APPLICATION ERROR\n=================\n\nUSR:\n\n#{x.usr.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\nERROR:\n\n#{e}\n#{e.backtrace.join("\n")}\n\nENV:\n\n#{x.req.env.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\nGET:\n\n#{x.req.get.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\nPOST:\n\n#{x.req.post.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\n"
-    if Conf['debug']['on_screen']
+    if Waxx['debug']['on_screen']
       x << "<pre>#{report.h}</pre>" 
     else
       App::Html.page(x, 
@@ -178,11 +184,11 @@ module Waxx::Server
           <p>Sorry for the inconvenience.</p>"
       )
     end
-    if Conf['debug']['send_email'] and Conf['debug']['email']
+    if Waxx['debug']['send_email'] and Waxx['debug']['email']
       begin
-        to_email = Conf['debug']['email']
-        from_email = Conf['site']['support_email']
-        subject = "[Bug] #{Conf['site']['name']} #{x.meth}:#{x.req.uri}"
+        to_email = Waxx['debug']['email']
+        from_email = Waxx['site']['support_email']
+        subject = "[Bug] #{Waxx['site']['name']} #{x.meth}:#{x.req.uri}"
         # Send email via DB
         App::Email.post(x, d:{
           to_email: to_email,
@@ -208,7 +214,7 @@ module Waxx::Server
 
   # Require first level apps in the Waxx::Root/app directory
   def require_apps
-    Dir["#{Conf["opts"][:base]}/app/*"].each{|f|
+    Dir["#{Waxx["opts"][:base]}/app/*"].each{|f|
       next if f =~ /\/app\.rb$/ # Don't reinclude app.rb
       require f if f =~ /\.rb$/ # Load files in the app directory 
       if File.directory? f # Load top-level apps
@@ -240,9 +246,9 @@ module Waxx::Server
     Thread.new do
       Thread.current[:name]="waxx-#{Time.new.to_i}-#{id}"
       Thread.current[:status]="idle"
-      Thread.current[:db] =  Waxx::Database.connections(Conf['databases'])
+      Thread.current[:db] = Waxx['databases'].nil? ? {} : Waxx::Database.connections(Waxx['databases'])
       Thread.current[:last_used] = Time.new.to_i
-      debug "Create thread #{Thread.current[:name]}"
+      Waxx.debug "Create thread #{Thread.current[:name]}"
       loop do
         Waxx::Server.process_request(@@queue.pop, Thread.current[:db])
       end
@@ -250,10 +256,10 @@ module Waxx::Server
   end
 
   def setup_threads
-    debug "setup_threads"
+    Waxx.debug "setup_threads"
     Thread.current[:name]="main"
     @@queue = Queue.new
-    thread_count = Conf['server']['start_threads'] || Conf['server']['threads']
+    thread_count = Waxx['server']['min_threads'] || Waxx['server']['threads']
     1.upto(thread_count).each do |i|
       create_thread(i)
     end
@@ -268,24 +274,24 @@ module Waxx::Server
 
   def start(options={})
     @@last_load_time = Time.new
-    debug "start #{$$}"
+    Waxx.debug "start #{$$}"
     thread_count = setup_threads
-    server = TCPServer.new(Conf['server']['host'], Conf['server']['port'])
-    puts "Listening on #{server.addr} with #{thread_count} threads (max_threads: #{Conf['server']['max_threads'] || Conf['server']['threads']})"
+    server = TCPServer.new(Waxx['server']['host'], Waxx['server']['port'])
+    puts "Listening on #{server.addr} with #{thread_count} threads (max_threads: #{Waxx['server']['max_threads'] || Waxx['server']['threads']})"
     while s = server.accept
-      debug "server.accept", 7
-      reload_code if Conf['debug']['auto_reload_code']
+      Waxx.debug "server.accept", 7
+      reload_code if Waxx['debug']['auto_reload_code']
       @@queue << s
-      debug "q.size: #{@@queue.size}", 7
-      debug "q.waiting:  #{@@queue.num_waiting}", 7
+      Waxx.debug "q.size: #{@@queue.size}", 7
+      Waxx.debug "q.waiting:  #{@@queue.num_waiting}", 7
       # Check threads
       Waxx::Supervisor.check
     end
-    debug "end start", 9
+    Waxx.debug "end start", 9
   end
 
   def stop(opts={})
-    debug "stop #{$$}"
+    Waxx.debug "stop #{$$}"
     puts "Stopping #{Thread.list.size - 1} worker threads..."
     Thread.list.each{|t| 
       next if t[:name] == "main"

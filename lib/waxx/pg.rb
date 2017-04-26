@@ -104,7 +104,7 @@ module Waxx::Pg
   end
 
   def get(x, select:nil, id:nil, joins:nil,  where:nil, having:nil, order:nil, limit:nil, offset:nil, view:nil, &blk)
-    debug "object.get"
+    Waxx.debug "object.get"
     select = parse_select(select, view)
     where = ["#{@table}.#{@pkey} = $1",id] if id and where.nil?
     # Block SQL injection in order clause. All order options must be defined in @orders.
@@ -115,7 +115,7 @@ module Waxx::Pg
         if view and view.orders/order
           order = view.orders/order
         else
-          debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
+          Waxx.debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
           order = @pkey
         end
       else
@@ -127,7 +127,7 @@ module Waxx::Pg
     end
     q = {select:select, joins:joins, where:where, having:having, order:order, limit:limit, offset:offset}
     yield q if block_given?
-    debug "object.get.select: #{q[:select]}"
+    Waxx.debug "object.get.select: #{q[:select]}"
     return [] if q[:select].empty?
     sql = []
     sql << "SELECT #{q[:select] || "*"}"
@@ -141,8 +141,8 @@ module Waxx::Pg
     vals << q[:where][1] if q[:where] and q[:where][1]
     vals << q[:having][1] if q[:having] and q[:having][1]
     #[sql.join(" "), vals.flatten]
-    debug sql
-    debug vals.join(", ")
+    Waxx.debug sql
+    Waxx.debug vals.join(", ")
     x.db[@db].exec(sql.join(" "), vals.flatten)
   end
 
@@ -176,8 +176,8 @@ module Waxx::Pg
     sql << names.join(",")
     sql << ") VALUES (#{vars.join(",")})"
     sql << " RETURNING #{returning || ret.join(",")}"
-    debug(sql)
-    debug(vals)
+    Waxx.debug(sql)
+    Waxx.debug(vals)
     x.db[@db].exec(sql, vals).first 
   end
 
@@ -193,9 +193,9 @@ module Waxx::Pg
     vals = []
     ret = []
     i = 1
-    debug "data: #{data}"
+    Waxx.debug "data: #{data}"
     cols.each{|n,v|
-      debug "col: #{n}: #{v.inspect}"
+      Waxx.debug "col: #{n}: #{v.inspect}"
       if data.has_key? n.to_s or data.has_key? n.to_sym
         set << "#{n} = $#{i}"
         vals << cast(v, data/n)
@@ -206,8 +206,8 @@ module Waxx::Pg
     sql << set.join(",")
     sql << " WHERE #{@pkey} = $#{i} #{where} RETURNING #{returning || ret.join(",")}"
     vals << id
-    debug(sql)
-    debug(vals)
+    Waxx.debug(sql)
+    Waxx.debug(vals)
     x.db[@db].exec(sql, vals).first 
   end
   alias patch put
@@ -238,5 +238,9 @@ module Waxx::Pg
     return default_order if req_order.nil?
     return orders[req_order.to_sym] if orders.has_key? req_order.to_sym
     @pkey
+  end
+
+  def debug(str, level=3)
+    Waxx.debug(str, level)
   end
 end

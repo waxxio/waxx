@@ -16,7 +16,7 @@ module Waxx::Database
    }
   end
 
-  def connect(conf=Conf['database'])
+  def connect(conf=Waxx['database'])
     # Parse the conf string to load the correct db engine
     engine = conf.split(":").first
     case engine.downcase
@@ -57,8 +57,9 @@ module Waxx::Database
   #     app: connection_string,
   #     blog: connection_string
   #   }
-  def connections(dbs=Conf['databases'])
+  def connections(dbs=Waxx['databases'])
     c = {}
+    return c if dbs.nil?
     dbs.each{|name, conf|
       c[name.to_sym] = connect(conf)
       c.define_singleton_method(name){self[name.to_sym]}

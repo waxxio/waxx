@@ -8,11 +8,11 @@ module Waxx::Supervisor
   ##
   # Check the thread pool and add or remove threads
   def check
-    start_threads = Conf['server']['start_threads'] || Conf['server']['threads']
-    max_threads = Conf['server']['max_threads'] || Conf['server']['threads']
-    idle_thread_timeout = Conf['server']['idle_thread_timeout'] || 600
+    start_threads = Waxx['server']['min_threads'] || Waxx['server']['threads']
+    max_threads = Waxx['server']['max_threads'] || Waxx['server']['threads']
+    idle_thread_timeout = Waxx['server']['idle_thread_timeout'] || 600
     ts = Thread.list.select{|t| t[:name] =~ /waxx/}
-    debug "Supervisor.check_threads: #{ts.size}"
+    Waxx.debug "Supervisor.check_threads: #{ts.size}", 5
     # Ensure the minimum threads
     if ts.size < start_threads
       0.upto(start_threads - ts.size).each do |i|
@@ -33,8 +33,8 @@ module Waxx::Supervisor
     ts.each{|t|
       if ts.size > start_threads
         if Time.new.to_i - t[:last_used].to_i > idle_thread_timeout and t[:status] == 'idle' and Thread.current != t
-          debug "Terminate expired thread #{t[:name]}"
-          Conf['databases'].each{|n,v|
+          Waxx.debug "Terminate expired thread #{t[:name]}", 3
+          Waxx['databases'].each{|n,v|
             t[:db][n.to_sym].close rescue "already closed"
           }
           t.exit

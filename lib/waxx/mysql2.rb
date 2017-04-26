@@ -100,13 +100,13 @@ module Waxx::Mysql2
   end
 
   def get(x, select:nil, id:nil, joins:nil,  where:nil, having:nil, order:nil, limit:nil, offset:nil, view:nil, &blk)
-    debug "object.get"
+    Waxx.debug "object.get"
     select = parse_select(select, view)
     where = ["#{@table}.#{@pkey} = ?",id] if id and where.nil?
     # Block SQL injection in order clause. All order options must be defined in @orders.
     if order
       if not @orders/order
-        debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
+        Waxx.debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
         order = @pkey
       else
         order = @orders/order 
@@ -117,7 +117,7 @@ module Waxx::Mysql2
     end
     q = {select:select, joins:joins, where:where, having:having, order:order, limit:limit, offset:offset}
     yield q if block_given?
-    debug "object.get.select: #{q[:select]}"
+    Waxx.debug "object.get.select: #{q[:select]}"
     return [] if q[:select].empty?
     sql = []
     sql << "SELECT #{q[:select] || "*"}"
@@ -131,8 +131,8 @@ module Waxx::Mysql2
     vals << q[:where][1] if q[:where] and q[:where][1]
     vals << q[:having][1] if q[:having] and q[:having][1]
     #[sql.join(" "), vals.flatten]
-    debug sql
-    debug vals.join(", ")
+    Waxx.debug sql
+    Waxx.debug vals.join(", ")
     x.db[@db].prepare(sql.join(" ")).execute(*(vals.flatten))
   end
 
@@ -165,8 +165,8 @@ module Waxx::Mysql2
     }
     sql << names.join(",")
     sql << ") VALUES (#{vars.join(",")})"
-    debug(sql)
-    debug(vals)
+    Waxx.debug(sql)
+    Waxx.debug(vals)
     x.db[@db].prepare(sql).execute(*vals) 
     id = x.db[@db].last_id
     x.db[@db].prepare("SELECT #{returning || ret.join(",")} FROM #{@table} WHERE #{@pkey} = ?").execute(id).first 
@@ -184,9 +184,9 @@ module Waxx::Mysql2
     vals = []
     ret = []
     i = 1
-    debug "data: #{data}"
+    Waxx.debug "data: #{data}"
     cols.each{|n,v|
-      debug "col: #{n}: #{v.inspect}"
+      Waxx.debug "col: #{n}: #{v.inspect}"
       if data.has_key? n.to_s or data.has_key? n.to_sym
         set << "#{n} = ?"
         vals << cast(v, data/n)
@@ -197,8 +197,8 @@ module Waxx::Mysql2
     sql << set.join(",")
     sql << " WHERE #{@pkey} = ? #{where}"
     vals << id
-    debug(sql)
-    debug(vals)
+    Waxx.debug(sql)
+    Waxx.debug(vals)
     x.db[@db].prepare(sql).execute(*vals)
     x.db[@db].prepare("SELECT #{returning || ret.join(",")} FROM #{@table} WHERE #{@pkey} = ?").execute(id).first 
   end

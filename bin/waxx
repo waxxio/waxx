@@ -101,14 +101,13 @@ def parse_options(commands)
 end
 
 opts = parse_options(commands)
-#if File.exist? "#{opts[:base]}/lib/waxx"
-#  require "#{opts[:base]}/lib/waxx"
-#else
-  require 'waxx'
-#end
-Conf.load_yaml(opts[:base], opts[:env])
-Conf["opts"] = opts
-unless %w(init help).include? command
+require_relative '../lib/waxx'
+$:.unshift "#{opts[:base]}"
+if %w(init help).include? command
+  Waxx::Conf["opts"] = opts
+else
+  Waxx::Conf.load_yaml(opts[:base], opts[:env])
+  Waxx::Conf["opts"] = opts
   require "#{opts[:base]}/app/app"
 end
 
@@ -119,5 +118,5 @@ if Waxx::Console::Command.respond_to? command
     Waxx::Console::Command.send(command, opts)
   end
 else
-  puts "The #{command} command has not been implemented yet. opts: #{opts.inspect} conf: #{Conf.data.inspect}"
+  puts "The #{command} command has not been implemented yet. opts: #{opts.inspect} conf: #{Waxx::Conf.data.inspect}"
 end

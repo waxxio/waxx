@@ -1,3 +1,5 @@
+require 'pg'
+
 module App
   extend Waxx::App
   extend Waxx::Util

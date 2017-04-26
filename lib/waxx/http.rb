@@ -30,6 +30,7 @@ module Waxx::Http
   end
 
   def parse_head(io)
+    Waxx.debug("parse_head: #{io.class}", 9)
     env = {}
     head = ""
     while(e = io.gets)
@@ -38,6 +39,7 @@ module Waxx::Http
       n, v = e.split(":", 2)
       env[n] = v.strip
     end
+    Waxx.debug "env.size: #{env.size}", 9
     [env, head]
   end
 
@@ -77,7 +79,7 @@ module Waxx::Http
           post[cd['name']] = body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,"")
         end
       rescue => e
-        debug "Error parse_multipart: #{e}"
+        Waxx.debug "Error parse_multipart: #{e}"
         post["Error in parse_multipart (uid-#{rand})"] = e
       end
     }
@@ -94,7 +96,7 @@ module Waxx::Http
       name = unescape(name)
       vals = values.split('&').collect{|v| unescape(v) }
       if re.has_key?(name)
-        debug "re has key"
+        Waxx.debug "re has key"
         if Array === re[name]
           re[name].push vals
         else
@@ -113,7 +115,7 @@ module Waxx::Http
     Waxx.debug "parse_data"
     if %w(PUT POST PATCH).include? meth
       data = io.read(env['Content-Length'].to_i)
-      debug "data.size: #{data.size} #{env['Content-Type']}"
+      Waxx.debug "data.size: #{data.size} #{env['Content-Type']}"
       case env['Content-Type']
         when /x-www-form-urlencoded/
           post = query_string_to_hash(data).freeze

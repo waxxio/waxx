@@ -1,7 +1,6 @@
 module App::AppError
   extend Waxx::Object
   extend self
-  init
   runs(
     request: {
       desc: "Display a request error (400)",

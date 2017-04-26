@@ -91,7 +91,7 @@ module Waxx::Console
     alias buff restart
 
     def get(url=ARGV[1], opts={})
-      Conf['debug']['level'] = 0
+      Waxx['debug']['level'] = 0
       Waxx::Console.get(url, opts)
     end
 
@@ -129,7 +129,7 @@ module Waxx::Console
     end
 
     def config(opts)
-      puts Conf.data.send("to_#{opts[:format]}")
+      puts Waxx.data.send("to_#{opts[:format]}")
     end
 
     def deploy(target, opts)
@@ -141,7 +141,7 @@ module Waxx::Console
     end
 
     def init(opts)
-      require 'lib/waxx/init'
+      require_relative 'init'
       Waxx::Init.init(x, opts)
     end
 
@@ -163,7 +163,7 @@ module Waxx::Console
     end
 
     def test(target, opts)
-      require 'lib/waxx/test.rb'
+      require_relative 'test'
       start_time = Time.new
       re = {}
       total_tests = 0

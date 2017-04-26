@@ -89,13 +89,13 @@ module Waxx::Mongodb
   end
 
   def get(x, select:nil, id:nil, joins:nil,  where:nil, having:nil, order:nil, limit:nil, offset:nil, view:nil, &blk)
-    debug "object.get"
+    Waxx.debug "object.get"
     select = parse_select(select, view)
     where = ["#{@table}.#{@pkey} = $1",id] if id and where.nil?
     # Block SQL injection in order clause. All order options must be defined in @orders.
     if order
       if not @orders/order
-        debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
+        Waxx.debug("ERROR: Object.get order (#{order}) not found in @orders [#{@orders.keys.join(", ")}]. Sorting by #{@pkey} instead.")
         order = @pkey
       else
         order = @orders/order 
@@ -106,7 +106,7 @@ module Waxx::Mongodb
     end
     q = {select:select, joins:joins, where:where, having:having, order:order, limit:limit, offset:offset}
     yield q if block_given?
-    debug "object.get.select: #{q[:select]}"
+    Waxx.debug "object.get.select: #{q[:select]}"
     return [] if q[:select].empty?
     sql = []
     sql << "SELECT #{q[:select] || "*"}"
@@ -120,8 +120,8 @@ module Waxx::Mongodb
     vals << q[:where][1] if q[:where] and q[:where][1]
     vals << q[:having][1] if q[:having] and q[:having][1]
     #[sql.join(" "), vals.flatten]
-    debug sql
-    debug vals.join(", ")
+    Waxx.debug sql
+    Waxx.debug vals.join(", ")
     x.db[@db].exec(sql.join(" "), vals.flatten)
   end
 
@@ -155,8 +155,8 @@ module Waxx::Mongodb
     sql << names.join(",")
     sql << ") VALUES (#{vars.join(",")})"
     sql << " RETURNING #{returning || ret.join(",")}"
-    debug(sql)
-    debug(vals)
+    Waxx.debug(sql)
+    Waxx.debug(vals)
     x.db[@db].exec(sql, vals).first 
   end
 
@@ -172,9 +172,9 @@ module Waxx::Mongodb
     vals = []
     ret = []
     i = 1
-    debug "data: #{data}"
+    Waxx.debug "data: #{data}"
     cols.each{|n,v|
-      debug "col: #{n}: #{v.inspect}"
+      Waxx.debug "col: #{n}: #{v.inspect}"
       if data.has_key? n.to_s or data.has_key? n.to_sym
         set << "#{n} = $#{i}"
         vals << cast(v, data/n)
@@ -185,8 +185,8 @@ module Waxx::Mongodb
     sql << set.join(",")
     sql << " WHERE #{@pkey} = $#{i} #{where} RETURNING #{returning || ret.join(",")}"
     vals << id
-    debug(sql)
-    debug(vals)
+    Waxx.debug(sql)
+    Waxx.debug(vals)
     x.db[@db].exec(sql, vals).first 
   end
   alias patch put

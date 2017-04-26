@@ -1,20 +1,18 @@
-require 'prawn'
-require 'prawn/table'
-require 'crypt/blowfish'
+require 'pg'
+# Uncomment these to use them
+# require 'mysql2'
+# require 'sqlite3'
+require 'mail'
 
 module App
   extend Waxx::App
   extend Waxx::Util
-  extend Waxx::Session
   extend Waxx::Encrypt
   extend Waxx::Server
   extend self
   init
-
-  def old_decrypt(str)
-    blowfish = Crypt::Blowfish.new(Conf['encryption']['old_key'])
-    blowfish.decrypt_string(Base64.decode64(str.to_s + "\n")).strip rescue ""
-  end
+  
+  # App methods here that you apps share
 end
 
 # Require layout engines

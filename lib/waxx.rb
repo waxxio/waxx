@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Libs (core & std lib)
+# Libs (core & std)
 require 'socket'
 require 'thread'
 require 'openssl'
@@ -48,9 +48,3 @@ require_relative 'waxx/server'
 require_relative 'waxx/supervisor'
 require_relative 'waxx/util'
 require_relative 'waxx/view'
-
-
-$:.unshift "#{File.dirname(__FILE__)}/.." 
-
-
-

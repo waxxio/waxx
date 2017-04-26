@@ -13,24 +13,26 @@
 # limitations under the License.
 
 ##
-# The global Conf variable. ex:  Conf['site']['name']
+# The global Waxx::Conf variable. ex:  `Waxx::Conf['site']['name']` or 
+# shortcut `Waxx['site']['name']`
 # Data is set in opt/env/config.yaml
-module Conf
+module Waxx::Conf
   extend self
 
   ##
   # Internal class var for conf data
   attr :data
+  @data = {}
 
   ##
-  # Load the yaml config file into the Conf module
-  # Access variables with Conf['var1']['var2'] or Conf/:var1/:var2
+  # Load the yaml config file into the Waxx module
+  # Access variables with Waxx['var1']['var2'] or Waxx/:var1/:var2
   def load_yaml(base=ENV['PWD'], env="active")
-    @data = ::YAML.load_file("#{base}/etc/#{env}/config.yaml")
+    @data = ::YAML.load_file("#{base}/opt/#{env}/config.yaml")
   end
 
   ##
-  # Get a Conf variable
+  # Get a Waxx variable
   def [](n)
     @data[n]
   end
@@ -42,7 +44,7 @@ module Conf
   end
 
   ##
-  # Get a Conf variable
+  # Get a Waxx variable
   def /(n)
     @data[n.to_s] || @data[n.to_sym]
   end

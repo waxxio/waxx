@@ -52,7 +52,7 @@ module Waxx
   #     }
   #   )
   # end
-  # x.ext   # The extension of the request: .json, .html, .pdf, etc. Default defined in Conf['default']['extension']
+  # x.ext   # The extension of the request: .json, .html, .pdf, etc. Default defined in Waxx['default']['extension']
   # # Background jobs (executed after the response is returned to the client. For example to deliver an email.)
   # x.jobs  # An array of jobs
   #         # Jobs are added as procs with optional arguments (proc, *args).

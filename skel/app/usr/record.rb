@@ -9,10 +9,10 @@ module App::Usr::Record
   has(
     :id,
     :usr_name,
-    "person_id:person.person_id",
-    "first_name:person.first_name",
-    "last_name:person.last_name",
-    "company_id:person.company_id"
+    #"person_id:person.id",
+    #"first_name:person.first_name",
+    #"last_name:person.last_name",
+    #"company_id:person.company_id"
   )
 
   def save(x, id:0, data:{})

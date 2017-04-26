@@ -127,10 +127,10 @@ module Waxx::View
         n, col = c.to_a[0]
       end
       if col.nil?
-        debug "Column #{c} not defined in #{@object}."
+        Waxx.debug "Column #{c} not defined in #{@object}."
         #raise "Column #{c} not defined in #{@object}."
       end
-      #debug @relations.inspect
+      #Waxx.debug @relations.inspect
       #TODO: Deal with relations that have different names than the tables
       col[:views] << self rescue col[:views] = [self]
       @columns[n.to_sym] = col
@@ -147,21 +147,21 @@ module Waxx::View
     n, rel_name, col_name = parse_col(str)
     # Look in the primary and related objects for relations
     j = @object.joins/rel_name || @relations.values.map{|foreign_rel| 
-      #debug "REL: #{foreign_rel}"
+      #Waxx.debug "REL: #{foreign_rel}"
       o = App.get_const(App, foreign_rel/:foreign_table)
-      #debug o
-      #debug o.joins.inspect
+      #Waxx.debug o
+      #Waxx.debug o.joins.inspect
       o.joins/rel_name
     }.compact.first
-    #debug "j:#{j.inspect}, n: #{n}, rel: #{rel_name}, col: #{col_name}"
+    #Waxx.debug "j:#{j.inspect}, n: #{n}, rel: #{rel_name}, col: #{col_name}"
     begin
       col = (App.get_const(App, j/:foreign_table)/col_name).dup
       col[:table] = rel_name
     rescue NoMethodError => e
-      debug "ERROR: NoMethodError: #{rel_name} does not define col: #{col_name}"
+      Waxx.debug "ERROR: NoMethodError: #{rel_name} does not define col: #{col_name}"
       raise e
     rescue NameError, TypeError => e
-      debug "ERROR: Name or Type Error: #{rel_name} does not define col: #{col_name}"
+      Waxx.debug "ERROR: Name or Type Error: #{rel_name} does not define col: #{col_name}"
       raise e
     end
     begin
@@ -171,14 +171,14 @@ module Waxx::View
       #col[:table] = rel_name 
     rescue NoMethodError => e
       if col.nil?
-        debug "col is nil"
+        Waxx.debug "col is nil"
       else
-        debug "ERROR: App[#{col[:table]}] has no joins in View.has"
+        Waxx.debug "ERROR: App[#{col[:table]}] has no joins in View.has"
       end
       raise e
     end
-    #debug n
-    #debug col
+    #Waxx.debug n
+    #Waxx.debug col
     [n, col]
   end
 

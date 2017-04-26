@@ -3,7 +3,7 @@
 
 module Waxx::Encrypt
   extend self
-  def encrypt(str, encode:'b64', cipher: Conf['encryption']['cipher'], key:Conf['encryption']['key'], iv:Conf['encryption']['iv'])
+  def encrypt(str, encode:'b64', cipher: Waxx['encryption']['cipher'], key:Waxx['encryption']['key'], iv:Waxx['encryption']['iv'])
     aes = OpenSSL::Cipher.new(cipher)
     aes.encrypt
     aes.key = key
@@ -19,7 +19,7 @@ module Waxx::Encrypt
         throw "Encoding not defined"
     end
   end
-  def decrypt(str, encode:'b64', cipher: Conf['encryption']['cipher'], key:Conf['encryption']['key'], iv:Conf['encryption']['iv'])
+  def decrypt(str, encode:'b64', cipher: Waxx['encryption']['cipher'], key:Waxx['encryption']['key'], iv:Waxx['encryption']['iv'])
     aes = OpenSSL::Cipher.new(cipher)
     aes.decrypt
     aes.key = key

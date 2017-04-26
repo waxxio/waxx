@@ -252,21 +252,45 @@ init:
   # Install Waxx in the target folder. Copy skel and update the config file
   def install_waxx(x, input, opts)
     skel_folder = "#{File.dirname(__FILE__)}/../../skel/"
+    install_folder = opts/:sub_command
     puts ""
-    puts "Copying files from #{skel_folder} to #{opts/:sub_command}/"
-    puts `rsync -av #{skel_folder} #{opts/:sub_command}/`
-    puts ""
-    puts "Installing dev config"
-    input.delete "init"
-    File.open("#{opts/:sub_command}/opt/dev/config.yaml","w"){|f| f << input.to_yaml}
+    puts "Adding folders"
+    %w(
+      app
+      bin 
+      db
+      db/app
+      lib
+      log
+      opt
+      opt/dev
+      opt/prod
+      opt/stage
+      opt/test
+      private
+      public
+      public/lib
+      public/media
+      tmp
+      tmp/pids
+    ).each{|f|
+      puts f
+      Dir.mkdir "#{opts/:sub_command}/#{f}"
+    }
+    puts "Copying files from #{skel_folder} to #{install_folder}/"
+    puts `rsync -av #{skel_folder} #{install_folder}/`
     if input/:init/:db
       puts ""
       puts "Creating database tables"
       create_tables(x, input)
     end
     puts ""
+    puts "Installing dev config"
+    input.delete "init"
+    File.open("#{install_folder}/opt/dev/config.yaml","w"){|f| f << input.to_yaml}
+    puts ""
     puts "Waxx installed successfully."
-    puts "cd into #{opts/:sub_command} and run `waxx on` to get your waxx on"
+    puts "cd into #{install_folder} and run `waxx on` to get your waxx on"
   end
 
 end
