@@ -93,29 +93,6 @@ init:
     )
   end
 
-  # The database definition to install
-  def standard_sql
-    {
-      app_log: %(),
-      email: %(),
-      grp: %(),
-      usr: %(),
-      usr_grp: %(),
-      waxx: %(),
-    }
-  end
-  
-  # The sql to generate the website app.
-  # TODO: This may be better suited to its own init script
-  def website_sql
-    {
-      website: %(),
-      website_host: %(),
-      website_page: %(),
-      website_page_tag: %()
-    }
-  end
-
   # Start the init process. Fired when `waxx init folder` is called
   def init(x, opts, input=nil)
     puts ""
@@ -154,17 +131,15 @@ init:
       puts "Installing into existing directory: #{name}"
     else
       puts "Make directory: #{name}"
-      Dir.mkdir(name)
+      #Dir.mkdir(name)
     end
   end
 
   # Ask questions about the config
   def ask(x, input)
     get_site(x, input)
-    get_server(x, input)
-    get_website(x, input)
-    get_db(x, input)
     get_key_iv(x, input)
+    get_db(x, input)
     input
   end
 
@@ -176,41 +151,15 @@ init:
     name = $stdin.gets.chomp
     print "  Support Email [#{input/:site/:support_email}]: "
     support_email = $stdin.gets.chomp
-    print "  URL (how users access the site) [#{input/:site/:url}]: "
-    url = $stdin.gets.chomp
-    input['site']['name'] = name unless name == ''
-    input['site']['support_email'] = support_email unless support_email == ''
-    input['site']['url'] = url unless url == ''
-    input
-  end
-
-  # Get config options about the server
-  def get_server(x, input)
-    puts ""
-    puts "Server options:"
     print "  Liston on IP/Host [#{input/:server/:host}]: "
     host = $stdin.gets.chomp
-    print "  Port [#{input/:server/:port}]: "
+    print "  Listen on Port [#{input/:server/:port}]: "
     port = $stdin.gets.chomp
+    input['site']['name'] = name unless name == ''
+    input['site']['support_email'] = support_email unless support_email == ''
     input['server']['host'] = host unless host == ''
     input['server']['port'] = port unless port == ''
-    input
-  end
-
-  # Get config options about the website
-  def get_website(x, input)
-    print "\nInstall the website app? (y|n) [#{input['init']['website'] ? 'y' : 'n'}]: " 
-    website = $stdin.gets.chomp
-    website = true if website == '' or not (website =~ /[Yy]/).nil?
-    if website
-      html = true
-    else
-      print "\nSupport HTML output? (y|n) [#{input['init']['html'] ? 'y' : 'n'}]: "
-      html = ($stdin.gets.chomp =~ /[Yy]/) == 0
-      html = true if html == '' or not (html =~ /[Yy]/).nil?
-    end
-    input['init']['website'] =  website
-    input['init']['html'] =  html
+    input['site']['url'] = "http://#{input['server']['host']}:#{input['server']['port']}"
     input
   end
 
@@ -223,9 +172,9 @@ init:
     print "  db: "
     db = $stdin.gets.chomp
     input['databases']['app'] = db == '' ? (input['databases']['app'] || default_db) : db
-    puts "Create standard Waxx tables?"
-    puts "These include: #{standard_sql.keys.join(", ")}."
-    print "  Create tables (y|n) [y]:"
+    puts "Create the standard waxx table? (The waxx table is used for migration management.)"
+    puts "The databse must already exist and the user must have create table privileges."
+    print "  Create waxx table (y|n) [y]:"
     initdb = $stdin.gets.chomp
     initdb = initdb == '' or not (initdb =~ /[Yy]/).nil?
     input['init']['db'] = initdb
@@ -237,7 +186,8 @@ init:
     puts ""
     puts "The AES key and initiation vector for encryption."
     puts "The default was generated with SecureRandom.base64()."
-    puts "Enter or paste 48 (or more) random characters."
+    puts "Accept the default or enter 48 (or more) random characters."
+    puts "Can not start with an ampersand: &"
     puts "See https://www.grc.com/passwords.htm for inspriation."
     puts "[#{input['encryption']['key']}#{input['encryption']['iv']}] "
     print "  Random string: "
@@ -254,35 +204,31 @@ init:
     skel_folder = "#{File.dirname(__FILE__)}/../../skel/"
     install_folder = opts/:sub_command
     puts ""
-    puts "Adding folders"
-    %w(
-      app
-      bin 
-      db
-      db/app
-      lib
-      log
-      opt
-      opt/dev
-      opt/prod
-      opt/stage
-      opt/test
-      private
-      public
-      public/lib
-      public/media
-      tmp
-      tmp/pids
-    ).each{|f|
-      puts f
-      Dir.mkdir "#{opts/:sub_command}/#{f}"
-    }
-    puts "Copying files from #{skel_folder} to #{install_folder}/"
-    puts `rsync -av #{skel_folder} #{install_folder}/`
+   # puts "Adding folders"
+   #FileUtils.mkdir_p(%w(
+   #  app
+   #  bin 
+   #  db/app
+   #  lib
+   #  log
+   #  opt
+   #  opt/dev
+   #  opt/prod
+   #  opt/stage
+   #  opt/test
+   #  private
+   #  public
+   #  public/lib
+   #  public/media
+   #  tmp
+   #  tmp/pids
+   #), verbose: true)
+    puts "Copying files from #{skel_folder} to #{install_folder}"
+    FileUtils.cp_r(skel_folder, install_folder, verbose: true)
     if input/:init/:db
       puts ""
-      puts "Creating database tables"
-      create_tables(x, input)
+      puts "Setup Database"
+      create_waxx_table(x, input)
     end
     puts ""
     puts "Installing dev config"
@@ -293,4 +239,37 @@ init:
     puts "cd into #{install_folder} and run `waxx on` to get your waxx on"
   end
 
+  def create_waxx_table(x, input)
+    # Require the db lib
+    case (input/:databases/:app).split(":").first.downcase
+      when 'postgresql'
+        require 'pg'
+      when 'mysql2'
+        require 'mysql2'
+      when 'sqlite3'
+        require 'sqlite3'
+    end
+    create_sql = %(
+      CREATE TABLE waxx (
+        name character varying(254) NOT NULL PRIMARY KEY,
+        value character varying(254) NOT NULL,
+        CONSTRAINT waxx_uniq UNIQUE(name)
+      )
+    )
+    insert_sql = %(INSERT INTO waxx (name, value) VALUES ('migration.last', '0'))
+    puts "  Connecting to: #{input/:databases/:app}"
+    begin
+      db = Waxx::Database.connect(input/:databases/:app)
+      db.exec(create_sql)
+      db.exec(insert_sql)
+      puts "  Waxx table created successfully."
+    rescue => e
+      puts %(
+        \nERROR: Could not create waxx table. Please create manually:
+        \n#{create_sql}
+        \n#{insert_sql}
+        \nError Detail: #{e}
+      )
+    end
+  end
 end

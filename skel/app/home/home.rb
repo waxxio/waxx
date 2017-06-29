@@ -1,4 +1,4 @@
-module Waxx::Home
+module App::Home
   extend Waxx::Object
   extend self
 
@@ -12,3 +12,5 @@ module Waxx::Home
     }
   )
 end
+
+require_relative 'html'

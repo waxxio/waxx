@@ -1,7 +1,6 @@
 server:
   host: 10.121.212.10
   port: 7777
-  processes: 1
   min_threads: 2
   max_threads: 4
   idle_thread_timeout: 300
@@ -40,7 +39,7 @@ xdatabases:
   app: postgresql://waxx@localhost:5432/waxx
 
 default:
-  app: welcome
+  app: home
   act: index
   ext: html
 

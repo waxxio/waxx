@@ -5,7 +5,7 @@ module App::Html
   def standard_css
     [
       "/lib/bootstrap/css/bootstrap.min.css",
-      "/lib/site.css",
+      "/lib/bootstrap/css/carousel.css",
     ]
   end
 
@@ -26,6 +26,19 @@ module App::Html
     x << foot(x, js:js, js_ready: js_ready)
     x << piwik
     x << '</body></html>'
+  end
+
+  def page(x, title:nil, content:nil, message:{type:"alert", message: nil}, css:[], js:[], js_ready:nil)
+    render(x, title:title, message: message, css: css, js: js, js_ready: js_ready, content:%(
+      #{
+      #App::Website::Html.chrome
+      }
+      <div class="container">
+      <h1>#{h title}</h1>
+      #{alert(message[:type], message[:message]) if message[:message]}
+      #{content||page['content']}
+      </div>
+    ))
   end
 
   def head(x, title:"Untitled", description:"", author:"", css:[], body_class:"")
@@ -59,7 +72,7 @@ module App::Html
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="#">Project name</a>
+              <a class="navbar-brand" href="#">#{h Waxx/:site/:name}</a>
             </div>
             <div id="navbar" class="navbar-collapse collapse">
               <ul class="nav navbar-nav">
@@ -93,19 +106,6 @@ module App::Html
     cls = %w(usr).include?(x.app) ? "active" : "" 
     cls = "active" if x.app == 'letter' and x.act == 'list'
     %(<a class="#{cls}" href="/dashboard"><span class="glyphicon glyphicon-cog"></span></a>)
-  end
-
-  def page(x, title:nil, content:nil, message:{type:"alert", message: nil}, css:[], js:[], js_ready:nil)
-    render(x, title:title, content_class: "container", message: message, css: css, js: js, js_ready: js_ready, content:%(
-      #{
-      #App::Website::Html.chrome
-      }
-      <div class="container">
-      <h1>#{h title}</h1>
-      #{alert(message[:type], message[:message]) if message[:message]}
-      #{content||page['content']}
-      </div>
-    ))
   end
   
   def admin(x, title:nil, content:nil, message:{type:"alert", message: nil}, css:[], js:[], js_ready:nil)
@@ -167,11 +167,10 @@ module App::Html
   )
   end
 
-
   def foot(x, js:[], js_ready:"")
     %(
 		<!-- FOOTER -->
-		<footer>
+		<footer class="container">
 			<p class="pull-right"><a href="#">Back to top</a></p>
 			<p>&copy; #{Time.new.year} #{h Waxx/:site/:name} &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a></p>
 			<p><a href="https://www.waxx.io/">Delivered by Waxx in #{((Time.new - x.req.start_time)*10000).to_i/10.0} ms</a>.</p>

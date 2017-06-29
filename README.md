@@ -20,7 +20,7 @@ The Waxx Framework was developed to build CRUD applications and REST and RPC ser
 
 ## Who's Behind This
 
-Waxx is a project of [ePark Labs](https://www.eparklabs.com/) and was developed by [Dan Fitzpatrick](http://djf.co/). 
+Waxx was developed by Dan Fitzpatrick at [ePark Labs](https://www.eparklabs.com/). 
 
 ## Hello World
 
@@ -29,7 +29,6 @@ _app/hello/hello.rb:_
 ```ruby
 module App::Hello
   extend Waxx::Object
-  extend self
 
   runs(
     default: "world",
@@ -51,16 +50,31 @@ NOTE: This is not the way you build a normal app. Just here because everyone wan
 
 ## Introduction to Waxx
 
-### Install
+### Normal Install
 
 ```bash
-gem install waxx
+sudo gem install waxx
+waxx init site
+cd site
+waxx on
+```
+
+### Secure Install
+
+The Waxx gem is cryptographically signed to be sure the gem you install hasn’t been tampered with.
+Because of this you need to add the public key to your list of trusted gem certs.
+Follow theese direction. (You only need step one the first time you install the gem.)
+
+```bash
+sudo gem cert --add <(curl -s https://www.waxx.io/waxx-gem-public-key.pem)
+sudo gem install waxx -P HighSecurity
 waxx init site
 cd site
 waxx on
 ```
 
 Visit [http://localhost:7777/](http://localhost:7777/). If you want a different port, edit `opt/dev/config.yaml` first.
+Then run `waxx buff` (waxx off && waxx on) or if you prefer `waxx restart`
 
 ### High Performance
 Waxx is multi-threaded queue-based system. 
@@ -75,24 +89,24 @@ With additional libraries, Waxx also easily generates XML, XLSX, CSV, PDF, etc.
 Waxx has no Classes. 
 It is Module-based and the Modules have methods (functions). 
 Each method within a Module is given parameters and the method runs in isolation. 
-There are no instance variables. 
+There are no instance variables and no global variables. 
 Consequently, it is very easy to understand what any method does and it is very easy to test methods. 
-You can call any method in the whole system from the console. 
-Passing in the same variables will always return the same result. 
+You can call any method in the whole system from the console using `waxx console`. 
+Passing in the same variables to a function will always return the same result. 
 Waxx does have `x.res.out` variable, which is appended to with `x << "text"`, that is passed into each method and any method can append to the response body or set response headers. 
 So it is not truly functional because this is considered a side effect.
 My opinion is that when you are building a response, then copying the response on every method is a waste of resources.
-So it does have this side affect by design.
+So it does have this side effect by design.
 
 #### Waxx Terminology
 
-- Object: A database table or database object
+- Object: A database table or database object or a container for some specific functionality
 - Object `has` fields (an array of Hashes). A field is both a database field/column/attribute and a UI control (for HTML apps) 
 - Field `is` (represents) a single object (INNER JOIN) or many related objects (LEFT JOIN)
 - Object `runs` a URL path - business logic (normally get from or post to a view)
 - View: Like a DB view -- fields from one or more tables/objects
 - Html, Json, Xlsx, Tab, Csv, Pdf, etc.: How to render the view
-- x is a variable that is passed to nearly all methods and contains the request (`x.req` contains: get and post vars, request cookies, and environment) and response (`x.res` contains the status, response cookies, headers, and content body) 
+- x is a variable that is passed to nearly all methods and contains the request (`x.req` contains: get and post vars, request cookies, and environment), response (`x.res` contains the status, response cookies, headers, and content body), user session (x.usr), and user agent (x.ua) cookies
 
 #### The "x" Variable
 
@@ -119,9 +133,9 @@ See [Waxx Docs](https://www.waxx.io/doc/code) for more info.
 2. The request is placed in a queue: `Waxx::Server.queue`
 3. The request is popped off the queue by a Ruby green thread and parsed
 4. The variable `x` is created with the request `x.req` and response `x.res`.
-5. The run method is called for the appropriate app (a namespaced RPC). All routes: /app/act/[arg1/args2/arg3/...] => app is the module and act is the method to call with the args.
+5. The run method is called for the appropriate app (a namespaced RPC). All routes are: /app/act/[arg1/args2/arg3/...] => app is the module and act is the method to call with the args.
 6. You output to the response using `x << "output"` or using helper methods: `App::Html.page(...)`
-7. The response is returned to the client. Partial, chunked, and streamed responses are supported as well.
+7. The response is returned to the client. Partial, chunked, and streamed responses are supported as well as you have direct access to the IO.
 
 ## Fast to Develop
 
@@ -130,7 +144,7 @@ Waxx was built with code maintainablity in mind. The following principles help i
 1. Simple to know where the code is located for any URI. A request to /person/list will start in the `app/person/person.rb` file and normally use the view defined in the file `app/person/list.rb`
 2. Fields are defined upfront. The fields you want to use in your app are defined in the Object file `app/person/person.rb`
 3. Field have attributes that make a lot of UI development simple (optional). has(email: {label: "Email Address" ...})`
-4. Views allow you to see exactly what is on an interface and all the business logic. 
+4. Views allow you to see exactly what is on an interface and all the business logic. Only the fields on a view can be updated so it is impossible to taint the database by passing in extra parameters. 
 5. Most rendering is automatic unless you want to do special stuff. You can use pure Ruby functions or your favorite template engine. The View file `app/person/list.rb` contains all of the fields, joined tables, and layout for a view.
 6. Full visibility into the external API and each endpoint's access control allows to immediate auditing of who can see and do what.
 
@@ -145,12 +159,12 @@ So a request to `example.com/` will show the home page if the default app is `we
 
 
 ### File Structure
-Waxx places each module in it's own directory. This includes the Object, Runner, Views,  Layouts, and Tests. 
+Waxx places each module in it's own directory. This includes the Object, Runner, Views, Layouts, and Tests. 
 I normally place my app-specific javascript and css in this same folder as well. 
 In this way, all of the functionality and features of a specific App or Module are fully self-contained. 
 However, you can optionally put your files anywhere and require them in your code. 
 So if you like all the objects to be in one folder you can do that. 
-If you work with a large team where Ruby and Javascript people do not overlap, then maybe that will work for you.
+If you work with a large team where backend and frontend people do not overlap, then maybe that will work for you.
 
 This is a normal structure:
 

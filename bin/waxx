@@ -14,7 +14,7 @@ def parse_options(commands)
   options = {
     sub_command: ARGV[1],
     port: 7700,
-    base: ENV['PWD'],
+    base: Dir.pwd,
     env: "active",
     pid_path: "tmp/pids/waxx.pid",
     daemonize: false,

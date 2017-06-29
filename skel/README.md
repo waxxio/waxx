@@ -8,4 +8,4 @@ For help: `waxx help`
 
 Start the app: `waxx on`
 
-Edit options in `opt/dev/config.yaml`
+Edit config in `opt/dev/config.yaml`

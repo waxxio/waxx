@@ -58,15 +58,14 @@ module Waxx::Server
   end
   
   def serve_file(io, uri)
-    Waxx.debug "serve_file", 9
     return false if Waxx['file'].nil?
-    file = "#{Waxx['file']['path']}#{uri.gsub("..","").split("?").first}"
+    file = "#{Waxx/:opts/:base}/#{Waxx/:file/:path}#{uri.gsub("..","").split("?").first}"
     file = file + "/index.html" if File.directory?(file)
     return false unless File.exist? file
     ext = file.split(".").last
     io.print([
       "HTTP/1.1 200 OK",
-      "Content-Type: #{(Waxx::Server.content_types/ext || 'octet-stream')}",
+      "Content-Type: #{(Waxx::Http.content_types/ext || 'octet-stream')}",
       "Content-Length: #{File.size(file)}",
       "",
       File.open(file,"rb") {|fh| fh.read}
@@ -259,7 +258,7 @@ module Waxx::Server
     Waxx.debug "setup_threads"
     Thread.current[:name]="main"
     @@queue = Queue.new
-    thread_count = Waxx['server']['min_threads'] || Waxx['server']['threads']
+    thread_count = Waxx['server']['min_threads'] || Waxx['server']['threads'] || 4
     1.upto(thread_count).each do |i|
       create_thread(i)
     end

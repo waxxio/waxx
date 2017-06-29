@@ -3,7 +3,7 @@ module App::Home::Html
   extend self
 
   def welcome(x)
-    App::Html.page(x, title: "Welcome to Waxx", content: %(
+    App::Html.render(x, title: "Welcome to Waxx", content: %(
       #{carousel(x)}
       <div class="container marketing">
         #{main_points(x)}
@@ -29,8 +29,8 @@ module App::Home::Html
           <img class="first-slide" src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" alt="First slide">
           <div class="container">
             <div class="carousel-caption">
-              <h1>Example headline.</h1>
-              <p>Note: If you're viewing this page via a <code>file://</code> URL, the "next" and "previous" Glyphicon buttons on the left and right might not load/display properly due to web browser security rules.</p>
+              <h1>Fast and Smooth</h1>
+              <p>Waxx makes web development fast and smooth. You can edit this page at <br><code>app/home/html.rb</code></p>
               <p><a class="btn btn-lg btn-primary" href="#" role="button">Sign up today</a></p>
             </div>
           </div>

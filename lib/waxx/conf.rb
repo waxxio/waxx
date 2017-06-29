@@ -28,6 +28,7 @@ module Waxx::Conf
   # Load the yaml config file into the Waxx module
   # Access variables with Waxx['var1']['var2'] or Waxx/:var1/:var2
   def load_yaml(base=ENV['PWD'], env="active")
+    env = "dev" if env == "active" and not File.exist? "#{base}/opt/active"
     @data = ::YAML.load_file("#{base}/opt/#{env}/config.yaml")
   end
 

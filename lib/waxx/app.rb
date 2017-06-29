@@ -26,11 +26,14 @@ module Waxx::App
   # `App.not_found(x, title: "Not Found", message: "The record you requested was not found.")`
   # The layout of the error page (html) is defined in app/app/error/html.rb
   def not_found(x, title:"Not Found", message:nil)
-    if message.nil?
-      @runs[:website][:page][:get].call(x, *(x.args))
-    else
-      error(x, status: 404, type: "request", title: title, message: message)
+    begin
+      if message.nil?
+        return @runs[:website][:page][:get].call(x, *(x.args))
+      end
+    rescue => e
+      message = e.to_s
     end
+    error(x, status: 404, type: "request", title: title, message: message)
   end
 
   ##

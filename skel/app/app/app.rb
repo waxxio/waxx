@@ -10,7 +10,7 @@ module App::App
         x.usr['no_cookies'] = true
         x << "app = {uid:#{x.usr['id']},cid:#{x.usr['cid']}};\n"
         # Read each file in the list and include it
-        %w(usr/usr).each{|f|
+        %w(usr/usr.js).each{|f|
           x << File.read("#{Waxx/:opts/:base}/app/#{f}") 
         }
         # JS for logged in users

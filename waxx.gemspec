@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.name    = "waxx"
   s.version = Waxx::Version
 
-  s.required_ruby_version = '>= 1.9.0'
+  s.required_ruby_version = '>= 2.0.0'
 
   s.author = "Dan Fitzpatrick"
   s.email  = "dan@waxx.io"
