@@ -63,10 +63,6 @@ def parse_options(commands)
       options[:name] = name
     end
 
-    opts.on("-u", "--user USER", String, "User to run as", "(default: current user)") do |user|
-      options[:user] = user
-    end
-
     opts.on("-t", "--to TO", String, "Where to deploy to (defined in etc/deploy.yaml)", "(default: stage)") do |to|
       options[:to] = to
     end

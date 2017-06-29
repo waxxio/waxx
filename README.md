@@ -61,7 +61,7 @@ waxx on
 
 ### Secure Install
 
-The Waxx gem is cryptographically signed to be sure the gem you install hasn’t been tampered with.
+The Waxx gem is cryptographically signed to be sure the gem you install hasn't been tampered with.
 Because of this you need to add the public key to your list of trusted gem certs.
 Follow theese direction. (You only need step one the first time you install the gem.)
 
