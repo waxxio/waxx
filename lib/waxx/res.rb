@@ -41,7 +41,8 @@ module Waxx
     :headers,
     :out,
     :error,
-    :cookies
+    :cookies,
+    :no_cookies
   ) do
 
     # Send output to the client (may be buffered)
@@ -72,9 +73,9 @@ module Waxx
       [
         "HTTP/1.1 #{status} #{Waxx::Http::Status[status.to_s]}",
         headers.map{|n,v| "#{n}: #{v}"},
-        cookies.map{|c| 
+        (cookies.map{|c| 
           "Set-Cookie: #{c}"
-        },
+        } unless no_cookies),
         "\r\n"
       ].flatten.join("\r\n")
     end

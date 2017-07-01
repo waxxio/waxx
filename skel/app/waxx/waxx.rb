@@ -11,7 +11,7 @@ module App::Waxx
     },
     sleep: {
       desc: "Sleep for seconds in args",
-      acl: %w(user),
+      acl: %w(dev),
       run: -> (x, secs=1) {
         sleep(secs.to_i)
         x.res.as :txt
@@ -19,15 +19,15 @@ module App::Waxx
       }
     },
     error: {
-      desc: "Raise an Error",
-      acl: %w(user),
+      desc: "Raise an Error (to see what the error looks like and send email if configured)",
+      acl: %w(dev),
       run: ->(x, *args){ 
         raise "generic error"
       }
     },
     env: {
       desc: "Output all the input variables",
-      #acl: "user",
+      acl: "dev",
       run: ->(x, *args) {  
         x.res.as :txt
         x << {"x" => {
@@ -52,7 +52,6 @@ module App::Waxx
     },
     raw: {
       desc: "Output all the input variables",
-      #acl: "user",
       run: -> (x, *args) {  
         x.res.as :txt
         x << x.req.env.map{|n,v| "#{n}: #{v}"}.join("\r\n")
@@ -60,18 +59,11 @@ module App::Waxx
         x << x.req.data
       }
     },
-    private: {
-      desc: "A private page that requires login",
-      acl: %w(user),
-      run: ->(x){
-        x.res.as :txt
-        x << "Welcome"
-      }
-    },
     desc: {
       desc: "Describes all of the applications interfaces.",
-      acl: "user",
+      acl: "dev",
       get: ->(x, app="all"){
+        return App.error(x, status: 300, 'Request Error', 'This method only return json or yaml') unless %w(json yaml).include? x.ext
         re = {}
         describe = -> (ap) {
           re[ap.to_s] = {}
@@ -98,16 +90,12 @@ module App::Waxx
         else
           describe[app]
         end
-        x.res.as :txt
-        if x.ext == 'json'
-          x << Oj.dump(re)
-        else
-          x << re.send("to_#{x.ext}")
-        end
+        x << re.send("to_#{x.ext}")
       }
     },
     threads: {
       desc: "Show the status of all threads",
+      acl: "dev"
       get: -> (x) {
         x.res.as :txt
         Thread.list.each{|t|
@@ -116,58 +104,6 @@ module App::Waxx
         }
       }
     },
-    stop: {
-      desc: "kill all threads",
-      acl: "admin",
-      get: -> (x) {
-        x.res.as :txt
-        Thread.list.each{|t|
-          next if t[:name] == "main"
-          t[:db].close
-          x << "#{t[:name]}: #{t[:status]}\n"
-          t.exit
-        }
-      }
-    },
-    golf: {
-      desc: "Golf demo",
-      get: -> (x) {
-        x << %(<form action="/waxx/golf" method="get">
-          Name: <input name="name"> <br>
-          Handicap: <input name="handicap"> <br>
-          <button type="submit">Submit</button>
-          </form>
-        )
-        x << %(<form action="/waxx/golf" method="post">
-          Name: <input name="name"> <br>
-          Handicap: <input name="handicap"> <br>
-          <button type="submit">Submit</button>
-          </form>
-        )
-        x << "You got #{x['name']} with handicap #{x['handicap']}." if x['name']
-      },
-      post: -> (x) {
-        x << "You posted #{x['name']} with handicap #{x['handicap']}."
-      }
-    },
-    params: {
-      desc: "Golf demo",
-      get: -> (x) {
-        x << %(<form action="/waxx/params?name=Joe&handicap[]=3" method="post">
-          Name: <input name="name"> <br>
-          Handicap: <input name="handicap[]"> <br>
-          Handicap: <input name="handicap[]"> <br>
-          <button type="submit">Submit</button>
-          </form>
-        )
-        x << "You got #{x['name']} with handicap {get: #{x.req.get['handicap']}, post: #{x.req.post['handicap']}} ." if x['name']
-      },
-      post: -> (x) {
-        x << "You posted #{x.req.get['name']} #{x.req.post['name']} #{x['name']} with handicap {get: #{x.req.get['handicap']}, post: #{x.req.post['handicap']}, x: #{x['handicap']} ." if x['name']
-      }
-    }
   )
 
 end
-
-require_relative 'route/waxx_route'

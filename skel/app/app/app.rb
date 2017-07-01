@@ -7,7 +7,7 @@ module App::App
     js: {
       desc: "Serve the application javascript files.",
       get: -> (x) { 
-        x.usr['no_cookies'] = true
+        x.res.no_cookies = true
         x << "app = {uid:#{x.usr['id']},cid:#{x.usr['cid']}};\n"
         # Read each file in the list and include it
         %w(usr/usr.js).each{|f|
@@ -16,7 +16,7 @@ module App::App
         # JS for logged in users
         if x.usr?
           %w().each{|f|
-            x << File.read("#{Conf['opts'][:base]}/app/#{f}.js") 
+            x << File.read("#{Waxx/:opts/:base}/app/#{f}") 
           }
         end
       }
