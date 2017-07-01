@@ -1,8 +1,8 @@
-require 'pg'
-# Uncomment these to use them
+# Uncomment these to use them or add additional gems
+# require 'pg'
 # require 'mysql2'
 # require 'sqlite3'
-require 'mail'
+# require 'mail'
 
 module App
   extend Waxx::App
@@ -12,7 +12,7 @@ module App
   extend self
   init
   
-  # App methods here that you apps share
+  # App methods here that your apps share
 end
 
 # Require layout engines

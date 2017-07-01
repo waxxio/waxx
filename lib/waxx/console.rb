@@ -133,8 +133,8 @@ module Waxx::Console
     end
 
     def deploy(target, opts)
-      dep = YAML.load_file("#{opts[:base]}/etc/deploy.yaml")
-      dep[target.to_sym].each{|n,v|
+      dep = YAML.load_file("#{opts[:base]}/opt/deploy.yaml")
+      dep[target.to_s].each{|n,v|
         puts "Deploying #{target} to #{n}"
         `ssh #{v['user']}@#{v['host']} '#{v['command']}'`
       }

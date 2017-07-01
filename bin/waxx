@@ -39,7 +39,7 @@ def parse_options(commands)
       options[:port] = v
     end
 
-    opts.on("-b", "--base DIR", String, "The base/root directory of the app. Should contain: app, bin, etc, log, etc.", "(default: cwd: #{options[:base]})") do |v|
+    opts.on("-b", "--base DIR", String, "The base/root directory of the app. Should contain: app, bin, opt, log, etc.", "(default: cwd: #{options[:base]})") do |v|
       options[:base] = v.sub(/\/$/,"")
     end
 
@@ -63,7 +63,7 @@ def parse_options(commands)
       options[:name] = name
     end
 
-    opts.on("-t", "--to TO", String, "Where to deploy to (defined in etc/deploy.yaml)", "(default: stage)") do |to|
+    opts.on("-t", "--to TO", String, "Where to deploy to (defined in opt/deploy.yaml)", "(default: stage)") do |to|
       options[:to] = to
     end
 
