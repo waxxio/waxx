@@ -19,7 +19,7 @@ The WAXX Framework was developed to build CRUD applications and REST and RPC ser
 
 ## Who's Behind This
 
-WAXX is a project of [ePark Labs](https://www.eparklabs.com/) and was developed by [Dan Fitzpatrick](https://djf.co/). 
+WAXX is a project of Dan Fitzpatrick at [ePark Labs](https://www.eparklabs.com/). 
 
 ## How Does it Compare to Rails
 
