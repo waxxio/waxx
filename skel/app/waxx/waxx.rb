@@ -22,7 +22,7 @@ module App::Waxx
       desc: "Raise an Error (to see what the error looks like and send email if configured)",
       acl: %w(dev),
       run: ->(x, *args){ 
-        raise "generic error"
+        raise "test error"
       }
     },
     env: {
@@ -95,7 +95,7 @@ module App::Waxx
     },
     threads: {
       desc: "Show the status of all threads",
-      acl: "dev"
+      acl: "dev",
       get: -> (x) {
         x.res.as :txt
         Thread.list.each{|t|

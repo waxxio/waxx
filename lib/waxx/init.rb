@@ -109,7 +109,7 @@ init:
     puts input.to_yaml
     puts ""
     puts ""
-    puts "Does this look right? You can edit this YAML file in #{opts/:sub_command}/opt/dev/config.yaml."
+    puts "Does this look right? You can edit this YAML file later in #{opts/:sub_command}/opt/dev/config.yaml."
     print "Install? (y|n) [y]: "
     proceed = $stdin.gets.chomp
     if proceed == '' or (proceed =~ /[yY]/) == 0
@@ -168,6 +168,7 @@ init:
     default_db = "postgresql://#{`whoami`.chomp}@localhost/#{`whoami`.chomp}"
     puts ""
     puts "Enter your database connection string (type://user:pass@host:port/db)"
+    puts "Types include: postgresql, mysql2, sqlite3, mongodb"
     puts "[#{input['databases']['app'] || default_db}] "
     print "  db: "
     db = $stdin.gets.chomp
@@ -188,7 +189,7 @@ init:
     puts "The default was generated with SecureRandom.base64()."
     puts "Accept the default or enter 48 (or more) random characters."
     puts "Can not start with an ampersand: &"
-    puts "See https://www.grc.com/passwords.htm for inspriation."
+    puts "See https://www.grc.com/passwords.htm for inspiration."
     puts "[#{input['encryption']['key']}#{input['encryption']['iv']}] "
     print "  Random string: "
     random = $stdin.gets.chomp
@@ -204,27 +205,8 @@ init:
     skel_folder = "#{File.dirname(__FILE__)}/../../skel/"
     install_folder = opts/:sub_command
     puts ""
-   # puts "Adding folders"
-   #FileUtils.mkdir_p(%w(
-   #  app
-   #  bin 
-   #  db/app
-   #  lib
-   #  log
-   #  opt
-   #  opt/dev
-   #  opt/prod
-   #  opt/stage
-   #  opt/test
-   #  private
-   #  public
-   #  public/lib
-   #  public/media
-   #  tmp
-   #  tmp/pids
-   #), verbose: true)
     puts "Copying files from #{skel_folder} to #{install_folder}"
-    FileUtils.cp_r(skel_folder, install_folder, verbose: true)
+    FileUtils.cp_r(skel_folder, install_folder, verbose: false)
     if input/:init/:db
       puts ""
       puts "Setup Database"
