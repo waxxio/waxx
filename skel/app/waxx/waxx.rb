@@ -63,7 +63,7 @@ module App::Waxx
       desc: "Describes all of the applications interfaces.",
       acl: "dev",
       get: ->(x, app="all"){
-        return App.error(x, status: 300, 'Request Error', 'This method only return json or yaml') unless %w(json yaml).include? x.ext
+        return App.error(x, status: 300, title: 'Request Error', message: 'This method only return json or yaml') unless %w(json yaml).include? x.ext
         re = {}
         describe = -> (ap) {
           re[ap.to_s] = {}

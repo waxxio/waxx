@@ -76,6 +76,8 @@ waxx on
 Visit [http://localhost:7777/](http://localhost:7777/). If you want a different port, edit `opt/dev/config.yaml` first.
 Then run `waxx buff` (waxx off && waxx on) or if you prefer `waxx restart`
 
+See [Install Waxx](https://www.waxx.io/doc/install) for complete details.
+
 ### High Performance
 Waxx is multi-threaded queue-based system. 
 You specify the number of threads in the config file. 

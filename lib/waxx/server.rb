@@ -34,8 +34,8 @@ module Waxx::Server
 
   def default_cookies
     {
-      u: {uk: Waxx.random_string(20), la: Time.now.to_i},
-      a: {la: Time.now.to_i}
+      "#{Waxx['cookie']['user']['name']}" => {uk: Waxx.random_string(20), la: Time.now.to_i},
+      "#{Waxx['cookie']['agent']['name']}" => {la: Time.now.to_i}
     }
   end
 
@@ -93,13 +93,13 @@ module Waxx::Server
       #Waxx.debug head, 9
       cookie = Waxx::Http.parse_cookie(env['Cookie'])
       begin
-        usr = cookie['u'] ? JSON.parse(::App.decrypt(cookie['u'][0])) : default_cookies[:u] 
+        usr = cookie[Waxx['cookie']['user']['name']] ? JSON.parse(::App.decrypt(cookie[Waxx['cookie']['user']['name']][0])) : default_cookies[Waxx['cookie']['user']['name']] 
       rescue => e
         Waxx.debug e.to_s, 1
-        usr = default_cookies[:u]
+        usr = default_cookies[Waxx['cookie']['user']['name']]
       end
       begin
-        ua = cookie['a'] ? JSON.parse(::App.decrypt(cookie['a'][0])) : {} 
+        ua = cookie[Waxx['cookie']['agent']['name']] ? JSON.parse(::App.decrypt(cookie[Waxx['cookie']['agent']['name']][0])) : {} 
       rescue => e
         Waxx.debug e.to_s, 1
         ua = {}

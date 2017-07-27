@@ -270,7 +270,7 @@ module Waxx::View
   # data = App::Usr::List.get(x)
   # App::Usr::List::Json.get(x, data)
   # ```
-  def run(x, id:nil, data:nil, where:nil, having:nil, order:nil, limit:nil, offset:nil, message:{}, as:x.ext, meth:x.meth, args:nil)
+  def run(x, id:nil, data:nil, where:nil, having:nil, order:nil, limit:nil, offset:nil, message:{}, as:x.ext, meth:x.meth, args:{})
     case meth.to_sym
     when :get, :head
       if data.nil? or data.empty?
@@ -300,7 +300,7 @@ module Waxx::View
   ##
   # Automatically build the where clause of SQL based on the parameters passed in and the definition of matches and searches.
   def build_where(x, args: {}, matches: @matches, searches: @searches)
-    return nil if args.empty? or (matches.nil? and searches.nil?)
+    return nil if args.nil? or args.empty? or (matches.nil? and searches.nil?)
     w_str = ""
     w_args = []
     q = args/:q || x['q']

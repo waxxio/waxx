@@ -40,12 +40,12 @@ encryption:
 
 cookie:
   user:
-    name: u
+    name: wxu
     expires_after_login_mins: 1440
     expires_after_activity_mins: 480
     secure: true
   agent:
-    name: a
+    name: wxa
     expires_years: 30
     secure: true
 
@@ -129,9 +129,9 @@ init:
         exit 4
       end
       puts "Installing into existing directory: #{name}"
+      Dir.unlink name
     else
       puts "Make directory: #{name}"
-      #Dir.mkdir(name)
     end
   end
 
@@ -169,16 +169,22 @@ init:
     puts ""
     puts "Enter your database connection string (type://user:pass@host:port/db)"
     puts "Types include: postgresql, mysql2, sqlite3, mongodb"
+    puts "You can edit or add more database connections by editing opt/dev/config.yaml"
+    puts "Enter 'none' if you do not want to connect to a database now"
     puts "[#{input['databases']['app'] || default_db}] "
     print "  db: "
     db = $stdin.gets.chomp
-    input['databases']['app'] = db == '' ? (input['databases']['app'] || default_db) : db
-    puts "Create the standard waxx table? (The waxx table is used for migration management.)"
-    puts "The databse must already exist and the user must have create table privileges."
-    print "  Create waxx table (y|n) [y]:"
-    initdb = $stdin.gets.chomp
-    initdb = initdb == '' or not (initdb =~ /[Yy]/).nil?
-    input['init']['db'] = initdb
+    if db.downcase == "none"
+      input['databases'] = {}
+    else
+      input['databases']['app'] = db == '' ? (input['databases']['app'] || default_db) : db
+      puts "Create the standard waxx table? (The waxx table is used for migration management.)"
+      puts "The databse must already exist and the user must have create table privileges."
+      print "  Create waxx table (y|n) [y]:"
+      initdb = $stdin.gets.chomp
+      initdb = initdb == '' or not (initdb =~ /[Yy]/).nil?
+      input['init']['db'] = initdb
+    end
     input
   end
 
@@ -212,6 +218,16 @@ init:
       puts "Setup Database"
       create_waxx_table(x, input)
     end
+    if not (input/:databases).empty?
+      # Require the correct db lib in app/app.rb
+      db_libs = {pg: 'pg', postgresql: 'pg', mysql: 'mysql2', mysql2: 'mysql2', sqlite: 'sqlite3', sqlite3: 'sqlite3', mongo: 'mongodb', mongodb: 'mongodb'}
+      db_lib = db_libs[(input/:databases/:app).split(":").first.to_sym]
+      puts "Requiring lib '#{db_lib}' in app/app.rb"
+      app_rb = File.read("#{install_folder}/app/app.rb")
+      File.open("#{install_folder}/app/app.rb","w"){|f|
+        f.puts app_rb.sub("# require '#{db_lib}'","require '#{db_lib}'") 
+      }
+    end
     puts ""
     puts "Installing dev config"
     input.delete "init"
@@ -238,7 +254,7 @@ init:
         CONSTRAINT waxx_uniq UNIQUE(name)
       )
     )
-    insert_sql = %(INSERT INTO waxx (name, value) VALUES ('migration.last', '0'))
+    insert_sql = %(INSERT INTO waxx (name, value) VALUES ('db.app.migration.last', '0'))
     puts "  Connecting to: #{input/:databases/:app}"
     begin
       db = Waxx::Database.connect(input/:databases/:app)

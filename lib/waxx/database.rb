@@ -20,9 +20,9 @@ module Waxx::Database
     # Parse the conf string to load the correct db engine
     engine = conf.split(":").first
     case engine.downcase
-    when 'postgresql'
+    when 'postgresql', 'pg'
       Waxx::Pg.connect(conf)
-    when 'mysql2'
+    when 'mysql2', 'mysql'
       # Parse the string 
       uri = parse_uri(conf)
       # Merge the opts into the params
@@ -35,21 +35,13 @@ module Waxx::Database
       } 
       config.merge!(uri/:opts)
       Waxx::Mysql2.connect(config)
-    when 'sqlite3'
+    when 'sqlite3', 'sqlite'
       Waxx::Sqlite3.connect(conf.sub('sqlite3://',''))
-    when 'mongodb'
+    when 'mongodb', 'mongo'
       Waxx::Mongodb.connect(conf)
     else
-      raise 'Unknown Dataabase Type'
+      raise 'Unknown Database Type'
     end
-    #if Hash === conf
-    #  conn = PG.connect( dbname: conf['name'], user: conf['user'], password: conf['password'], host: conf['host'] )
-    #else
-    #  conn = PG.connect( conf )
-    #end
-    #conn.type_map_for_results = PG::BasicTypeMapForResults.new conn
-    #conn.type_map_for_queries = PG::BasicTypeMapForQueries.new conn
-    #conn
   end
   
   # Define database connections in config.yaml or pass in a hash 
@@ -67,17 +59,18 @@ module Waxx::Database
     c
   end
 
-  def migrate(opts)
+  def migrate(db_only=nil, opts={})
     dbs = connections
     dbs.each{|name, db|
+      next if db_only and db_only != db
       puts "Migrating: db.#{name}"
       # get the latest version
-      latest = db.exec("SELECT value FROM waxx WHERE name = 'migration.last'").first['value']
+      latest = db.exec("SELECT value FROM waxx WHERE name = 'db.#{name}.migration.last'").first['value']
       Dir.entries("#{opts[:base]}/db/#{name}/").sort.each{|f|
         if f =~ /\.sql$/ and f > latest
           puts "  #{f}"
           db.exec(File.read("#{opts[:base]}/db/#{name}/#{f}"))
-          db.exec("UPDATE waxx SET value = $1 WHERE name = 'migration.last'",[f])
+          db.exec("UPDATE waxx SET value = $1 WHERE name = 'db.#{name}.migration.last'",[f])
         end
       }
     }

@@ -23,8 +23,8 @@ module App::Html
     x.res.error.each{|e| x << alert(e[:type], e[:message]) }
     x << content
     x << app_modal(x)
-    x << foot(x, js:js, js_ready: js_ready)
-    x << piwik
+    x << foot(x)
+    x << script(x, js:js, js_ready: js_ready)
     x << '</body></html>'
   end
 
@@ -139,8 +139,8 @@ module App::Html
 
   # Type can be: success info warning danger
   def alert(type="info", message="")
-    signs = {success:"info", info:"info", warning:"warning", danger:"warning"}
     return "" if message.empty?
+    signs = {success: "info", info: "info", warning: "warning", danger: "warning"}
     %(<div class="alert alert-#{type}" role="alert"><strong>
     <span class="glyphicon glyphicon-#{signs[type.to_sym]}-sign"></span> #{message.h}</strong></div>)
   end
@@ -167,34 +167,25 @@ module App::Html
   )
   end
 
-  def foot(x, js:[], js_ready:"")
+  def foot(x)
     %(
 		<!-- FOOTER -->
 		<footer class="container">
 			<p class="pull-right"><a href="#">Back to top</a></p>
 			<p>&copy; #{Time.new.year} #{h Waxx/:site/:name} &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a></p>
-			<p><a href="https://www.waxx.io/">Delivered by Waxx in #{((Time.new - x.req.start_time)*10000).to_i/10.0} ms</a>.</p>
+			<p><a href="https://www.waxx.io/">Delivered by Waxx in #{'%.1f' % ((Time.new - x.req.start_time) * 1000)} ms</a>.</p>
     </footer>
-    <!-- END Page Container -->
+    )
+  end
+
+  def script(x, js:[], js_ready:"")
+    %(
     #{(standard_js + js).map{|f| %(<script src="#{f}" type="text/javascript"></script>) }.join}
     <script type="text/javascript">
     $(document).ready(function(){
       #{js_ready}
     })
     </script>
-    )
-  end
-
-  def piwik
-    site_id = 9
-    %(<!-- Piwik -->
-    <script type="text/javascript">
-      var _paq = _paq || []; _paq.push(['trackPageView']); _paq.push(['enableLinkTracking']);
-      (function() {
-        var u="https://stats.eparklabs.com/"; _paq.push(['setTrackerUrl', u+'piwik.php']); _paq.push(['setSiteId', #{site_id}]); var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
-      })();                              
-    </script>
-    <noscript><p><img src="https://stats.eparklabs.com/piwik.php?idsite=#{site_id}" alt=""></p></noscript>
     )
   end
 

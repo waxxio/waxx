@@ -145,17 +145,17 @@ module Waxx::Console
       Waxx::Init.init(x, opts)
     end
 
-    def migrate(opts)
-      Waxx::Database.migrate opts
+    def migrate(db='app', opts={})
+      Waxx::Database.migrate db, opts
     end
 
-    def migration(opts)
+    def migration(db='app', name=nil, opts={})
       dt = Time.new.strftime('%Y%m%d%H%M')
-      if opts[:name].nil?
+      if name.nil?
         puts "Enter the name of the migration: "
-        opts[:name] = gets.chomp
+        name = gets.chomp
       end           
-      m_file = "db/migrations/#{dt}-#{opts[:name].gsub(/\W/,"-")}.sql"
+      m_file = "db/#{db}/#{dt}-#{name.gsub(/\W/,"-")}.sql"
       File.open(m_file, "w"){|f|
         f.puts "BEGIN;\n\n\n\nCOMMIT;"
       }

@@ -20,6 +20,21 @@ module App::Usr
     key_sent_date:        {type: "timestamp",label:""}
   )
 
+  # Create the first usr (or any usr). Run from the console: App::Usr.init(x)
+  def init(x)
+    data = {}
+    puts "Create a new user"
+    print "Email: "
+    data[:usr_name] = gets.chomp
+    print "Password: "
+    data[:password] = gets.chomp
+    salt, encrypted_password = salt_password(x, data/:password)
+    data[:salt_aes256] = salt
+    data[:password_sha256] = encrypted_password
+    u = post(x, data, returning: 'id')
+    puts "User #{data/:usr_name} added (usr.id: #{u['id']})"
+  end
+
   def login(x, usr_name, password)
     u = usr(x, usr_name:usr_name)
     return false, "Invalid user name", {} if u.nil? or u['id'].nil?
@@ -57,14 +72,12 @@ module App::Usr
     put(x, id, {salt_aes256: salt, password_sha256: epw})
   end
 
-  def create(x, data={}, returning:nil)
+  def create(x, data={}, returning: "id")
     data = blk.call if block_given?
     salt, encrypted_password = salt_password(x, data/:password)
     data[:salt_aes256] = salt
     data[:password_sha256] = encrypted_password
-    post(x, returning: returning){
-      Waxx.symbol_hash(data, %w(usr_name password_sha256 salt_aes256 person_id))
-    }
+    post(x, data, returning: returning)
   end
 
   def login_successful(x, usr)
