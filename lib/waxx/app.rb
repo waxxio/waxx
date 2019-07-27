@@ -27,7 +27,7 @@ module Waxx::App
   # The layout of the error page (html) is defined in app/app/error/html.rb
   def not_found(x, title:"Not Found", message:nil)
     begin
-      if message.nil?
+      if message.nil? and @runs[:website] and @runs[:website][:page]
         return @runs[:website][:page][:get].call(x, *(x.args))
       end
     rescue => e
@@ -66,7 +66,7 @@ module Waxx::App
   # 5. args: The args to pass to the method (after x) (Array)
   #
   # Example: `App.run(x, :person, :record, :get, [1])` will call the get method with the parameter "1" of the record handler defined in App::Person 
-  def run(x, app, act, meth, args)
+  def run(x, app, act, meth, args=[])
     if @runs[app.to_sym][act][meth.to_sym]
       begin
         @runs[app.to_sym][act][meth.to_sym][x, *args]
@@ -100,7 +100,11 @@ module Waxx::App
   # Layouts in app/app/error/*
   def error(x, status:200, type:"request", title:"An error occurred", message:"", args: [])
     x.res.status = status
-    App[:app_error][type.to_sym][:get][x, title, message, *args]
+    if App[:app_error][type.to_sym]
+      App[:app_error][type.to_sym][:get][x, title, message, *args]
+    else
+      x << "ERROR: #{title} - #{message}"
+    end
   end
 
   ##
@@ -158,6 +162,8 @@ module Waxx::App
 
   def login_needed(x)
     if x.ext == "json"
+      x.res.status = 400
+      x << {ok: false, msg: 'Login needed: Session did not pass ACL'}
     else
       App::Html.render(x,
         title: "Please Login",

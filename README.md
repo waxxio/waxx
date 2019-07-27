@@ -1,10 +1,6 @@
 # Waxx - Web Application X(x)
 
-**NOTICE: This is the first public release of Waxx and the APIs may change. Do not build large production apps with it yet!**
-
-**NOTICE: Waxx does not run on Windows yet. Working on it. Stay tuned.**
-
-The Waxx Framerwork is a high perfomance, functional-inspired (but not truly functional), web application development environment written in Ruby and inspired by Go and Haskel. 
+The Waxx Framework is a high perfomance, functional-inspired (but not truly functional), web application development environment written in Ruby and inspired by Go and Haskel.
 
 ## Goals
 
@@ -16,11 +12,11 @@ The Waxx Framerwork is a high perfomance, functional-inspired (but not truly fun
 
 ## Target Users
 
-The Waxx Framework was developed to build CRUD applications and REST and RPC services. It scales very well on multi-core machines and is [will be] suitable for very large deployments.
+The Waxx Framework was developed to build CRUD applications and REST and RPC services. It scales very well on multi-core machines and is suitable for very large deployments.
 
 ## Who's Behind This
 
-Waxx was developed by Dan Fitzpatrick at [ePark Labs](https://www.eparklabs.com/). 
+Waxx was developed by Dan Fitzpatrick at [ePark Labs](https://www.eparklabs.com/).
 
 ## Hello World
 
@@ -63,7 +59,7 @@ waxx on
 
 The Waxx gem is cryptographically signed to be sure the gem you install hasn't been tampered with.
 Because of this you need to add the public key to your list of trusted gem certs.
-Follow theese direction. (You only need step one the first time you install the gem.)
+Follow these direction. (You only need step one the first time you install the gem.)
 
 ```bash
 sudo gem cert --add <(curl -s https://www.waxx.io/waxx-gem-public-key.pem)
@@ -79,23 +75,23 @@ Then run `waxx buff` (waxx off && waxx on) or if you prefer `waxx restart`
 See [Install Waxx](https://www.waxx.io/doc/install) for complete details.
 
 ### High Performance
-Waxx is multi-threaded queue-based system. 
-You specify the number of threads in the config file. 
-Each thread is prespawned and each thread makes it's own database connection. 
-Requests are received and put into a FIFO request queue. 
-The threads work through the queue. 
-Each request, including session management, a database query, access control, and rendering in HTML or JSON is approximately 1-2ms (on a modern Xeon server). 
-With additional libraries, Waxx also easily generates XML, XLSX, CSV, PDF, etc. 
+Waxx is multi-threaded queue-based system.
+You specify the number of threads in the config file.
+Each thread is prespawned and each thread makes it's own database connection.
+Requests are received and put into a FIFO request queue.
+The threads work through the queue.
+Each request, including session management, a database query, access control, and rendering in HTML or JSON is approximately 1-2ms (on a modern Xeon server).
+With additional libraries, Waxx also easily generates XML, XLSX, CSV, PDF, etc.
 
-### Easy to Grok 
-Waxx has no Classes. 
-It is Module-based and the Modules have methods (functions). 
-Each method within a Module is given parameters and the method runs in isolation. 
-There are no instance variables and no global variables. 
-Consequently, it is very easy to understand what any method does and it is very easy to test methods. 
-You can call any method in the whole system from the console using `waxx console`. 
-Passing in the same variables to a function will always return the same result. 
-Waxx does have `x.res.out` variable, which is appended to with `x << "text"`, that is passed into each method and any method can append to the response body or set response headers. 
+### Easy to Grok
+Waxx has no Classes.
+It is Module-based and the Modules have methods (functions).
+Each method within a Module is given parameters and the method runs in isolation.
+There are no instance variables and no global variables.
+Consequently, it is very easy to understand what any method does and it is very easy to test methods.
+You can call any method in the whole system from the console using `waxx console`.
+Passing in the same variables to a function will always return the same result.
+Waxx does have `x.res.out` variable, which is appended to with `x << "text"`, that is passed into each method and any method can append to the response body or set response headers.
 So it is not truly functional because this is considered a side effect.
 My opinion is that when you are building a response, then copying the response on every method is a waste of resources.
 So it does have this side effect by design.
@@ -103,7 +99,7 @@ So it does have this side effect by design.
 #### Waxx Terminology
 
 - Object: A database table or database object or a container for some specific functionality
-- Object `has` fields (an array of Hashes). A field is both a database field/column/attribute and a UI control (for HTML apps) 
+- Object `has` fields (an array of Hashes). A field is both a database field/column/attribute and a UI control (for HTML apps)
 - Field `is` (represents) a single object (INNER JOIN) or many related objects (LEFT JOIN)
 - Object `runs` a URL path - business logic (normally get from or post to a view)
 - View: Like a DB view -- fields from one or more tables/objects
@@ -146,26 +142,26 @@ Waxx was built with code maintainablity in mind. The following principles help i
 1. Simple to know where the code is located for any URI. A request to /person/list will start in the `app/person/person.rb` file and normally use the view defined in the file `app/person/list.rb`
 2. Fields are defined upfront. The fields you want to use in your app are defined in the Object file `app/person/person.rb`
 3. Field have attributes that make a lot of UI development simple (optional). has(email: {label: "Email Address" ...})`
-4. Views allow you to see exactly what is on an interface and all the business logic. Only the fields on a view can be updated so it is impossible to taint the database by passing in extra parameters. 
+4. Views allow you to see exactly what is on an interface and all the business logic. Only the fields on a view can be updated so it is impossible to taint the database by passing in extra parameters.
 5. Most rendering is automatic unless you want to do special stuff. You can use pure Ruby functions or your favorite template engine. The View file `app/person/list.rb` contains all of the fields, joined tables, and layout for a view.
 6. Full visibility into the external API and each endpoint's access control allows to immediate auditing of who can see and do what.
 
 There are no routes.
-All paths are `/:app/:act/:arg1/:arg2/...`. 
-The URL maps to an App and runs the act (method). 
-For example: `example.com/person/list` will execute the `list` method in the `App::Person` module. 
-This method is defined in `app/person/person.rb`. 
-Another example: A request to `/website_page/content/3` will execute the `content` method in the `App::WebsitePage` app and pass in `3` as the first parameter after 'x'. 
-There is a default app and a default method in each app. 
+All paths are `/:app/:act/:arg1/:arg2/...`.
+The URL maps to an App and runs the act (method).
+For example: `example.com/person/list` will execute the `list` method in the `App::Person` module.
+This method is defined in `app/person/person.rb`.
+Another example: A request to `/website_page/content/3` will execute the `content` method in the `App::WebsitePage` app and pass in `3` as the first parameter after 'x'.
+There is a default app and a default method in each app.
 So a request to `example.com/` will show the home page if the default app is `website` and the default method in website is `home`.
 
 
 ### File Structure
-Waxx places each module in it's own directory. This includes the Object, Runner, Views, Layouts, and Tests. 
-I normally place my app-specific javascript and css in this same folder as well. 
-In this way, all of the functionality and features of a specific App or Module are fully self-contained. 
-However, you can optionally put your files anywhere and require them in your code. 
-So if you like all the objects to be in one folder you can do that. 
+Waxx places each module in it's own directory. This includes the Object, Runner, Views, Layouts, and Tests.
+I normally place my app-specific javascript and css in this same folder as well.
+In this way, all of the functionality and features of a specific App or Module are fully self-contained.
+However, you can optionally put your files anywhere and require them in your code.
+So if you like all the objects to be in one folder you can do that.
 If you work with a large team where backend and frontend people do not overlap, then maybe that will work for you.
 
 This is a normal structure:
@@ -231,7 +227,7 @@ This is a normal structure:
 |       `-- deploy              # The script to deploy to stage (run on the production server(s))
 |-- private                     # A folder for private files (served by the file app if included)
 `-- public                      # The public folder (Web server should have this as the root)
-   
+
 ```
 
 The Waxx::Object has two purposes:
@@ -297,7 +293,7 @@ require_relative 'list'   # The List View is defined here
 require_relative 'record' # The Record View is defined here
 ```
 
-A view is like a database view (not like a Rails view). The view specifies what tables/objects and fields/properties are going to be displayed and potentially edited. The Html layout module is like a Rails view. Other layouts include: Json, Csv, Pdf, Xlsx. 
+A view is like a database view (not like a Rails view). The view specifies what tables/objects and fields/properties are going to be displayed and potentially edited. The Html layout module is like a Rails view. Other layouts include: Json, Csv, Pdf, Xlsx.
 
 **app/person/list.rb** *(This is the view that lists the users)*
 
@@ -305,7 +301,7 @@ A view is like a database view (not like a Rails view). The view specifies what 
 module App::Person::List
   extend Waxx::View
   extend self
-  
+
   has(
     :id,
     :first_name,
@@ -313,28 +309,28 @@ module App::Person::List
     :email
     # This view does not include the bio field
   )
-  
+
   module Html
     extend Waxx::Html
     extend self
-    
+
     def get(x, data, message={})
-      # This method appends to x and includes your site layout and nav. 
+      # This method appends to x and includes your site layout and nav.
       # The content attribute is what goes in the content area of the page.
       App::Html.page(x,
         title: "People",
         content: content(x, data)
       )
     end
-    
+
     def content(x, data)
       # You put your HTML output here using:
       %(<p>HTHL or a template engine</p>)
     end
-    
+
   end
 end
-```  
+```
 
 **app/person/record.rb** *(This is the view to view, edit, update, and delete a record)*
 
@@ -342,7 +338,7 @@ end
 module App::Person::Record
   extend Waxx::View
   extend self
-  
+
   has(
     :id,
     :first_name,
@@ -350,23 +346,23 @@ module App::Person::Record
     :email,
     :bio
   )
-  
+
   module Html
     extend Waxx::Html
     extend self
-    
+
     def get(x, data, message={})
       App::Html.page(
         title: "#{data['first_name']} #{data['last_name']}",
         content: content(x, data)
       )
     end
-    
+
     def content(x, data)
       # You put your HTML output here using:
       %(<p>HTHL or a template engine</p>)
     end
-    
+
     def post(x)
       # Following a post, redirect to the list view
       x.res.redirect "/person/list"
@@ -425,7 +421,7 @@ Then in the list view, we can add the company that the person is associated with
 module App::Person::List
   extend Waxx::View
   extend self
-    
+
   has(
     :id,
     :first_name,
@@ -435,7 +431,7 @@ module App::Person::List
   )
 end
 ```
-    
+
 In this case the attribute "company_name" will be added to the view and is the value of the "name" field in the company table. The syntax for this is `<name>: <relationship_name (as defined in the object)>.<field>`.
 
 ### LEFT JOIN (is: name:table.field+)
@@ -462,10 +458,10 @@ end
 
 *Note: The + sign after the related attribute make this join a left join (Oracle style)*
 
-INNER JOIN (If you don't want to show invoices with no items): 
+INNER JOIN (If you don't want to show invoices with no items):
 
 `id: {pkey: true, is:"items: invoice_item.invoice_id"}`
-  
+
 LEFT JOIN (If you want to show invoices with no items):
 
 `id: {pkey: true, is:"items: invoice_item.invoice_id+"}`
@@ -496,7 +492,7 @@ This will show a list of all invoices and the items on the invoices:
 module App::Invoice::Items
   extend Waxx::View
   extend self
-  
+
   has(
     :id,
     :invoice_date,
@@ -509,14 +505,14 @@ module App::Invoice::Items
   )
 end
 ```
-  
+
 This will generate the following SQL:
 
 ```sql
-  SELECT   invoice.id, invoice.invoice_date, company.name as company, product.name as product, 
+  SELECT   invoice.id, invoice.invoice_date, company.name as company, product.name as product,
       items.description as desc, items.quantity as qty, items.unit_price as price,
       (items.quantity * items.unit_price) as total
-  FROM  invoice 
+  FROM  invoice
       LEFT JOIN invoice_item AS items ON invoice.id = invoice_item.invoice_id
       INNER JOIN company ON invoice.customer_id = company.id
       INNER JOIN product ON items.product_id = product.id
@@ -535,7 +531,7 @@ The join table is just another object in Waxx
   module App::Usr
     extend Waxx::Pg
     extend self
-    
+
     has({
       id: {pkey: true, is:"group_member: usr_grp.usr_id+"},
       email: {validate: "email"},
@@ -547,7 +543,7 @@ The join table is just another object in Waxx
   module App::Grp
     extend Waxx::Pg
     extend self
-    
+
     has({
       id: {pkey: true, is:"group_members: usr_grp.grp_id+"},
       name: {required: true}
@@ -558,19 +554,19 @@ The join table is just another object in Waxx
   module App::UsrGrp
     extend Waxx::Pg
     extend self
-    
+
     has({
       id: {pkey: true},
       usr_id: {required: true, is:"usr:usr.id"},
       grp_id: {required: true, is:"grp:grp.id"}
     })
   end
-  
+
   # View that joins all three tables (show all users and groups they are in)
   module App::Usr::Groups
     extend Waxx::View
     extend self
-    
+
     has(
       :id,
       :email,
@@ -616,7 +612,7 @@ Each slash-delimited argument after the first two are treated as arguments to th
 module App::Artist
   extend Waxx::Pg
   extend self
-  
+
   runs(
     in: {
       desc: "Show a list of artists in an area",
@@ -628,7 +624,7 @@ module App::Artist
 end
 ```
 
-In this case all three parameters are required. An error will be raised if the city is missing. 
+In this case all three parameters are required. An error will be raised if the city is missing.
 There are two options: Add default values or use a proc instead of a lambda:
 
 ```
@@ -643,10 +639,10 @@ get: -> (x, country="us", state_prov="", city="") { }
 ```
 
 NOTE: You can use `return` in `lambda` and `->` constructs, but you need to use `break` in `proc` constructs to stop processing.
-  
+
 ### Variable Act / not_found
 
-What if you want the act be a variable like `/artist/david-bowie` or `/artist/motorhead`? 
+What if you want the act be a variable like `/artist/david-bowie` or `/artist/motorhead`?
 
 You define **`not_found`** in your Object runs method:
 
@@ -654,7 +650,7 @@ You define **`not_found`** in your Object runs method:
 module App::Artist
   extend Waxx::Pg
   extend self
-  
+
   runs(
     default: "list",
     list: {
@@ -699,7 +695,7 @@ Waxx includes a full user and session management system. The following apps are 
 Using these apps allow you to add users and groups and put users in groups. You define your access control lists for each method. There are several levels of permissions. The following seven code blocks are parts of the same file:
 
 ### Example ACLs
-ACLs are defined as a attribute (`acl: [nil|string|array|hash|lambda]`) of each method options hash. 
+ACLs are defined as a attribute (`acl: [nil|string|array|hash|lambda]`) of each method options hash.
 
 The following code blocks are different examples of the acl attribute in practice.
 
@@ -709,7 +705,7 @@ The following code blocks are different examples of the acl attribute in practic
   module App::Product
     extend Waxx::Pg
     extend self
-    
+
     runs(
       default: "list",
 ```
@@ -777,7 +773,7 @@ If the proc or lambda returns true, then the user is allowed to proceed, otherwi
 
 ```ruby
       special: {
-        desc: "View and edit a product from a specific IP 
+        desc: "View and edit a product from a specific IP
              or if the user has a secret key in their session",
         acl: -> (x) {
           x.req.env['X-REAL-IP'] == "10.10.10.10" or x.usr['secret'] == "let-me-in"
@@ -812,10 +808,10 @@ End the object file
 
 A fast JSON response for an autocomplete form field
 
-If you want to have a quick JSON response for an autocomplete -- Just use a Waxx::Object and bypass the Waxx::View and layout (Json, HTML, etc.). 
+If you want to have a quick JSON response for an autocomplete -- Just use a Waxx::Object and bypass the Waxx::View and layout (Json, HTML, etc.).
 Direct access is available to the database driver with `x.db.app` where `app` is the name of the database connection defined in your config.yaml file.
-In this case, as a user types in an autocomplete input box, the browser sends a request to: `/artist/autocomplete.json?q=da` 
-When the .json extension is used, the response content type will be application/json. 
+In this case, as a user types in an autocomplete input box, the browser sends a request to: `/artist/autocomplete.json?q=da`
+When the .json extension is used, the response content type will be application/json.
 What the user types would be in the `q` attribute.
 
 PostgreSQL DB:
@@ -834,8 +830,8 @@ module App::Artist
       desc: "Show a list of artists that match the 'q' param",
       get: -> (x) {
         x << x.db.app.exec("
-          SELECT id, name 
-          FROM artist 
+          SELECT id, name
+          FROM artist
           WHERE name ILIKE $1
           ORDER BY name
           LIMIT 20",
@@ -870,7 +866,7 @@ module App::Artist
 end
 ```
 
-Both of these should return a response in less than one millisecond (assuming your data is indexed and running on descent hardware).
+Both of these should return a response in less than one millisecond (assuming your data is indexed and running on decent hardware).
 
 That is the intro. Give it a whirl.
 

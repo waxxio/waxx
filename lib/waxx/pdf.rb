@@ -41,12 +41,12 @@ module Waxx::Pdf
     return_file(x)
   end
 
-  def render_file(x, pdf)
-    pdf.render_file file_path(x)
+  def render_file(x, pdf, path)
+    pdf.render_file path
   end
 
-  def return_file(x)
-    File.open(file_path(x), "rb"){|f| x << f.read}
+  def return_file(x, path)
+    File.open(path, "rb"){|f| x << f.read}
   end
 
   def show_grid(pdf)

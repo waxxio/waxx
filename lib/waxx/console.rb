@@ -112,16 +112,19 @@ module Waxx::Console
         require 'irb'
         puts "waxx console"
         #help = "Use the source, Luke"
-        x = Waxx::Console.x
-        binding.irb
-        #IRB.setup(nil)
-        #workspace = IRB::WorkSpace.new(self)
-        #irb = IRB::Irb.new(workspace)
-        #IRB.conf[:MAIN_CONTEXT] = irb.context
-        #irb.eval_input
-        #require 'lib/waxx/irb.rb'
-        #@x = Waxx::Console.x
-        #IRB.start_session(self) #"#{opts[:base]}/lib/waxx/irb_env.rb")
+        begin
+          x = Waxx::Console.x
+          binding.irb
+        rescue
+          IRB.setup(nil)
+          workspace = IRB::WorkSpace.new(self)
+          irb = IRB::Irb.new(workspace)
+          IRB.conf[:MAIN_CONTEXT] = irb.context
+          irb.eval_input
+          require 'lib/waxx/irb.rb'
+          @x = Waxx::Console.x
+          IRB.start_session(self) #"#{opts[:base]}/lib/waxx/irb_env.rb")
+        end
       else
         puts "Error: You need to call 'waxx console' from the root of a waxx installation."
         exit 1
@@ -159,7 +162,8 @@ module Waxx::Console
       File.open(m_file, "w"){|f|
         f.puts "BEGIN;\n\n\n\nCOMMIT;"
       }
-      system "/usr/bin/env #{ENV['EDITOR']} #{m_file}"
+      puts "Created #{m_file}"
+      system "/usr/bin/env #{ENV['EDITOR'] || 'vim'} #{m_file}"
     end
 
     def test(target, opts)

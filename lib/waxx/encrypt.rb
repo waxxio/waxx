@@ -12,7 +12,7 @@ module Waxx::Encrypt
       when :b64
         Base64.encode64(aes.update(str.to_s) + aes.final).chomp
       when :url
-        http_escape(Base64.encode64(aes.update(str.to_s) + aes.final).chomp)
+        Waxx::Http.escape(Base64.encode64(aes.update(str.to_s) + aes.final).chomp)
       when :bin
         aes.update(str.to_s) + aes.final
       else
@@ -28,7 +28,7 @@ module Waxx::Encrypt
       when :b64
         aes.update(Base64.decode64(str.to_s + "\n")) + aes.final
       when :url
-        aes.update(Base64.decode64(http_unescape(str.to_s) + "\n")) + aes.final
+        aes.update(Base64.decode64(Waxx::Http.unescape(str.to_s) + "\n")) + aes.final
       when :bin
         aes.update(str.to_s) + aes.final
       else

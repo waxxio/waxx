@@ -84,8 +84,20 @@ module Waxx
     def complete
       re = out.join
       headers["Content-Length"] = re.bytesize
-      server.print head
-      server.print re
+      begin
+        server.print head
+        server.print re
+      # Connection reset by peer
+      rescue Errno::ECONNRESET => e
+        Waxx.debug(e.class)
+        Waxx.debug(e)
+        Waxx.debug(e.backtrace.join("\n"))
+      # Broken pipe
+      rescue Errno::EPIPE => e
+        Waxx.debug(e.class)
+        Waxx.debug(e)
+        Waxx.debug(e.backtrace.join("\n"))
+      end
     end
 
     def cookie(name:"", value:nil, domain:nil, expires:nil, path:"/", secure:true, http_only: false, same_site: "Lax")
