@@ -352,8 +352,8 @@ module Waxx::View
 
   ## 
   # Save data
-  def put_post(x, id, data, args:nil)
-    @object.put_post(x, id, data, view: self)
+  def put_post(x, id, data, args:nil, returning: nil)
+    @object.put_post(x, id, data, view: self, returning: returning)
   end
   alias post put_post
   alias put put_post

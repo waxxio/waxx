@@ -2,6 +2,7 @@
 # Released under the Apache Version 2 License. See LICENSE.txt.
 
 module Waxx::Mongodb
+  extend self
 
   attr :db
   attr :table
@@ -18,6 +19,10 @@ module Waxx::Mongodb
     @joins = {}
     @orders = {}
     has(cols) if cols
+  end
+
+  def connect(str)
+    Mongo::Client.new(str).database
   end
 
   def has(opts=nil)
@@ -43,6 +48,10 @@ module Waxx::Mongodb
         @joins[r] = {join: "LEFT", table: t, col: c}
       end
     }
+  end
+
+  def connect(conf)
+    ::Mongo::Client.new(conf).database
   end
 
   def [](n)

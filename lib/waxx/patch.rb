@@ -2,6 +2,11 @@
 # Released under the Apache Version 2 License. See LICENSE.txt.
 
 # Patches to Ruby Classes
+class BigDecimal
+  def to_json(*a)
+    to_f.to_json(*a)
+  end
+end
 class Date
   # HTML format for a date
   def h
@@ -45,7 +50,8 @@ end
 class Hash
   # Add an symbol/string indifferent access to a hash
   def /(k)
-    self[k.to_sym] || self[k.to_s]
+    return self[k.to_sym] if self.has_key?(k.to_sym)
+    self[k.to_s]
   end
 end
 class NilClass
@@ -63,6 +69,10 @@ class NilClass
   # Convert a nil to an empty symbol
   def to_sym
     "".to_sym
+  end
+  # Nil is empty
+  def empty?
+    true
   end
 end
 class Numeric
@@ -82,6 +92,18 @@ class Numeric
     return x if size == 0
     x << (d + (num_parts[1].to_s + "0000000")[0,size])
   end
+  def ordinal
+    case self % 100
+    when 11, 12, 13 then "#{self}th"
+    else
+      case self % 10
+      when 1 then "#{self}st"
+      when 2 then "#{self}nd"
+      when 3 then "#{self}rd"
+      else "#{self}th"
+      end
+    end
+  end
 end
 class String
   # Escape HTML entities
@@ -96,6 +118,10 @@ class String
     x = num_parts[0].gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1#{t}")
     return x if size == 0
     x << (d + (num_parts[1].to_s + "0000000")[0,size])
+  end
+  # Capitalize all words
+  def capitalize_all
+    split(/[ _]/).map{|l| l.capitalize}.join(' ')
   end
 end
 class Time
@@ -130,7 +156,6 @@ class TrueClass
         raise "Unknown format in TrueClass.f: #{format}. Needs to be :yn, :tf, :icon, or :num."
     end
   end
-
   # Show true as 1
   def to_i
     1

@@ -143,13 +143,27 @@ module Waxx::Pg
     #[sql.join(" "), vals.flatten]
     Waxx.debug sql
     Waxx.debug vals.join(", ")
-    x.db[@db].exec(sql.join(" "), vals.flatten)
+    begin
+      x.db[@db].exec(sql.join(" "), vals.flatten)
+    rescue => e
+      if e =~ /connection/
+        x.db[@db].reset
+        x.db[@db].exec(sql.join(" "), vals.flatten)
+      else
+        raise e
+      end
+    end
   end
 
   def get_by_id(x, id, select=nil, view:nil)
     get(x, id: id, select: select, view: view).first
   end
   alias by_id get_by_id
+
+  def get_by_ulid(x, ulid, select=nil, view:nil)
+    get(x, select: select, view: view, where: ["ulid = $1", [ulid]]).first
+  end
+  alias by_ulid get_by_ulid
 
   def post(x, data, cols:nil, returning:nil, view:nil, &blk)
     if view
@@ -193,9 +207,7 @@ module Waxx::Pg
     vals = []
     ret = []
     i = 1
-    Waxx.debug "data: #{data}"
     cols.each{|n,v|
-      Waxx.debug "col: #{n}: #{v.inspect}"
       if data.has_key? n.to_s or data.has_key? n.to_sym
         set << "#{n} = $#{i}"
         vals << cast(v, data/n)
@@ -208,10 +220,10 @@ module Waxx::Pg
     vals << id
     Waxx.debug(sql)
     Waxx.debug(vals)
-    x.db[@db].exec(sql, vals).first 
+    x.db[@db].exec(sql, vals).first
   end
   alias patch put
-  
+
   def put_post(x, id, data, cols:nil, returning:nil, view: nil)
     q = nil
     q = get_by_id(x, id, @pkey) if id.to_i > 0
@@ -230,8 +242,8 @@ module Waxx::Pg
     end
   end
 
-  def delete(x, id)
-    x.db[@db].exec("DELETE FROM #{@table} WHERE #{@pkey} = $1", [id])
+  def delete(x, id, where: nil)
+    x.db[@db].exec("DELETE FROM #{@table} WHERE #{@pkey} = $1 #{where}", [id])
   end
 
   def order(req_order, default_order='')

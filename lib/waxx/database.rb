@@ -62,7 +62,7 @@ module Waxx::Database
   def migrate(db_only=nil, opts={})
     dbs = connections
     dbs.each{|name, db|
-      next if db_only and db_only != db
+      next if db_only and db_only.to_sym != name
       puts "Migrating: db.#{name}"
       # get the latest version
       latest = db.exec("SELECT value FROM waxx WHERE name = 'db.#{name}.migration.last'").first['value']
@@ -75,6 +75,14 @@ module Waxx::Database
       }
     }
     puts "Migration complete"
+  end
+
+  def [](name)
+    app[name]
+  end
+
+  def collection(name)
+    app[name]
   end
 
 end

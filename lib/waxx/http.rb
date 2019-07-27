@@ -8,9 +8,10 @@ module Waxx::Http
     ContentTypes
   end
 
-  def ctype(t, default="application/octet-stream")
+  def content_type(t, default="application/octet-stream")
     ContentTypes[t.to_sym] || default
   end
+  alias ctype content_type
 
   def time(t=Time.new.utc)
     t.strftime('%a, %d %b %Y %H:%M:%S UTC')
@@ -116,15 +117,20 @@ module Waxx::Http
     if %w(PUT POST PATCH).include? meth
       data = io.read(env['Content-Length'].to_i)
       Waxx.debug "data.size: #{data.size} #{env['Content-Type']}"
-      case env['Content-Type']
-        when /x-www-form-urlencoded/
-          post = query_string_to_hash(data).freeze
-        when /multipart/
-          post = parse_multipart(env, data).freeze
-        when /json/
-          post = (JSON.parse(data)).freeze
-        else
-          post = data.freeze
+      if env['Content-Length'].to_i == 0
+        post = {}.freeze
+        data = nil
+      else
+        case (env['Content-Type'] || env['content-type'] || env['Content-type'])
+          when /x-www-form-urlencoded/
+            post = query_string_to_hash(data).freeze
+          when /multipart/
+            post = parse_multipart(env, data).freeze
+          when /json/
+            post = (JSON.parse(data)).freeze
+          else
+            post = data.freeze
+        end
       end
     else
       post = {}.freeze

@@ -17,18 +17,17 @@ module Waxx::Server
   attr :queue
 
   def parse_uri(r)
-    Waxx.debug "parse_uri"
+    Waxx.debug "parse_uri: #{r}", 7
     meth, uri, ver = r.split(" ")
     path, params = uri.split("?", 2)
-    _, app, act, arg = path.split(".").first.split("/", 4)
-    app = Waxx['default']['app'] if app.to_s == ''
-    act = App[app.to_sym][:default] if act.to_s == '' and App[app.to_sym]
-    act = Waxx['default']['act'] if act.to_s == ''
-    oid = arg.split("/").first.gsub(/[^0-9]/,"").to_i rescue 0
-    ext = path =~ /\./ ? path.split(".").last.downcase : Waxx['default']['ext']
-    args = arg.split("/") rescue []
+    parts = path.split('/')
+    ext = parts.last.include?('.') ? parts.last.split('.').last : Waxx['default']['ext'] rescue Waxx['default']['ext']
+    parts[parts.size - 1] = parts.last.to_s.sub(/.#{ext}$/,'') if parts.size > 0
+    app = parts[1].to_s.empty? ? Waxx['default']['app'] : parts[1]
+    act = parts[2].to_s.empty? ? (App[app.to_sym][:default] || Waxx['default']['act']) : parts[2] rescue Waxx['default']['act']
+    args = parts.slice(3,99) || []
+    oid = args.first.to_s.gsub(/[^0-9]/,"").to_i rescue 0
     get = Waxx::Http.query_string_to_hash(params).freeze
-    Waxx.debug "parse_uri.oid #{oid}"
     [meth, uri, app, act, oid, args, ext, get]
   end
 
@@ -90,6 +89,7 @@ module Waxx::Server
       end
       #Waxx.debug "no-file"
       env, head = Waxx::Http.parse_head(io)
+      Waxx.debug [Time.now.to_s, meth, uri].join(" "), 2
       #Waxx.debug head, 9
       cookie = Waxx::Http.parse_cookie(env['Cookie'])
       begin
@@ -104,7 +104,17 @@ module Waxx::Server
         Waxx.debug e.to_s, 1
         ua = {}
       end
-      post, data = Waxx::Http.parse_data(env, meth, io, head)
+      begin
+        post, data = Waxx::Http.parse_data(env, meth, io, head)
+      rescue => e
+        post = nil
+        req = Waxx::Req.new(env, data, meth, uri, get, post, cookie, start_time).freeze
+        res = Waxx::Res.new(io, 400, default_response_headers(req, ext), [], [], [])
+        jobs = []
+        x = Waxx::X.new(req, res, usr, ua, db, meth.downcase.to_sym, app, act, oid, args, ext, jobs).freeze
+        fatal_error(x, e)
+        return finish(x, io)
+      end
       req = Waxx::Req.new(env, data, meth, uri, get, post, cookie, start_time).freeze
       res = Waxx::Res.new(io, 200, default_response_headers(req, ext), [], [], [])
       jobs = []
@@ -171,7 +181,7 @@ module Waxx::Server
   def fatal_error(x, e)
     x.res.status = 503
     puts "FATAL ERROR: #{e}\n#{e.backtrace}"
-    report = "APPLICATION ERROR\n=================\n\nUSR:\n\n#{x.usr.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\nERROR:\n\n#{e}\n#{e.backtrace.join("\n")}\n\nENV:\n\n#{x.req.env.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\nGET:\n\n#{x.req.get.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\nPOST:\n\n#{x.req.post.map{|n,v| "#{n}: #{v}"}.join("\n")}\n\n"
+    report = "APPLICATION ERROR\n=================\n\nUSR:\n\n#{x.usr.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nERROR:\n\n#{e}\n#{e.backtrace.join("\n")}\n\nENV:\n\n#{x.req.env.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nGET:\n\n#{x.req.get.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nPOST:\n\n#{x.req.post.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\n"
     if Waxx['debug']['on_screen']
       x << "<pre>#{report.h}</pre>" 
     else
@@ -189,16 +199,16 @@ module Waxx::Server
         from_email = Waxx['site']['support_email']
         subject = "[Bug] #{Waxx['site']['name']} #{x.meth}:#{x.req.uri}"
         # Send email via DB
-        App::Email.post(x, d:{
+        App::Email.post(x,
           to_email: to_email,
           from_email: from_email,
           subject: subject,
           body_text: report
-        })
+        )
       rescue => e2
         begin
           # Send email directly
-          Mail.deliver do
+          ::Mail.deliver do
             from     from_email
             to       to_email
             subject  subject
@@ -249,7 +259,13 @@ module Waxx::Server
       Thread.current[:last_used] = Time.new.to_i
       Waxx.debug "Create thread #{Thread.current[:name]}"
       loop do
-        Waxx::Server.process_request(@@queue.pop, Thread.current[:db])
+        Waxx.debug "Thread loop start", 9
+        begin
+          Waxx::Server.process_request(@@queue.pop, Thread.current[:db])
+        rescue => e
+          Waxx.debug "Error: process_request loop: #{e} #{e.backtrace}", 1
+        end
+        Waxx.debug "Thread loop end", 9
       end
     end
   end
@@ -260,8 +276,13 @@ module Waxx::Server
     @@queue = Queue.new
     thread_count = Waxx['server']['min_threads'] || Waxx['server']['threads'] || 4
     1.upto(thread_count).each do |i|
-      create_thread(i)
+      begin
+        create_thread(i)
+      rescue => e
+        Waxx.debug "Error creating thread #{i}: #{e}", 1
+      end
     end
+    Waxx.debug "Created #{thread_count} threads", 7
     thread_count
   end
 
