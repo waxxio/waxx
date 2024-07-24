@@ -117,7 +117,7 @@ module Waxx::Http
     Waxx.debug "parse_data"
     if %w(PUT POST PATCH).include? meth
       data = io.read(env['content-length'].to_i)
-      Waxx.debug "data.size: #{data.size} #{env['content-type']}", 6
+      Waxx.debug "data.size: #{data.size} #{env['content-type']}"
       if env['content-length'].to_i == 0
         post = {}.freeze
         data = nil
