@@ -77,14 +77,14 @@ module Waxx
     end
     def [](k)
       begin
-        req.post/k || req.get/k
+        req.post[k.to_s] || req.get[k.to_s]
       rescue
         nil
       end
     end
     def /(k)
       begin
-        req.post/k || req.get/k
+        req.post[k.to_s] || req.get[k.to_s]
       rescue
         nil
       end

@@ -110,7 +110,7 @@ end
 if Waxx::Console::Command.respond_to? command
   if %w(migration).include? command
     Waxx::Console::Command.send(command, ARGV[1], ARGV[2], opts)
-  elsif %w(get post put delete patch test deploy migration migrate).include? command
+  elsif %w(get post put delete patch test deploy migrate).include? command
     Waxx::Console::Command.send(command, ARGV[1], opts)
   else
     Waxx::Console::Command.send(command, opts)

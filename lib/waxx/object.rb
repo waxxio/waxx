@@ -30,15 +30,14 @@ module Waxx::Object
   # Attributes of each argument to the runs method
   #
   # ```
-  # desc:       A text description of the act. This is used in the documentation of your app
-  # acl:        The access control list. See the ACL section below
-  # middleware: Run lamdas before or after the handler method
-  # get:        Handle GET requests
-  # put:        Handle PUT requests
-  # post:       Handle POST requests
-  # patch:      Handle PATCH requests
-  # delete:     Handle DELETE requests
-  # run:        A generic handler for any request method (for example if you want all PUT, POST, PATCH, and DELETE requests to go to the same handler).
+  # desc:   A text description of the act. This is used in the documentation of your app
+  # acl:    The access control list. See the ACL section below
+  # get:    Handle GET requests
+  # put:    Handle PUT requests
+  # post:   Handle POST requests
+  # patch:  Handle PATCH requests
+  # delete: Handle DELETE requests
+  # run:    A generic handler for any request method (for example if you want all PUT, POST, PATCH, and DELETE requests to go to the same handler).
   # ```
   #
   # ### ACL - Controlling access to your acts
