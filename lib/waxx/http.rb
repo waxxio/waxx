@@ -118,9 +118,15 @@ module Waxx::Http
     if %w(PUT POST PATCH).include? meth
       data = io.read(env['content-length'].to_i)
       Waxx.debug "data.size: #{data.size} #{env['content-type']}"
+      # No content
       if env['content-length'].to_i == 0
         post = {}.freeze
         data = nil
+      # Raw file saved by nginx with path in header
+      elsif env['x-file-path']
+        post = {}.freeze
+        data = {"file_path" => env['x-file-path']}
+      # Parse based on content type
       else
         case env['content-type']
           when /x-www-form-urlencoded/
