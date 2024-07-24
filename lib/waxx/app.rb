@@ -100,9 +100,13 @@ module Waxx::App
   # Layouts in app/app/error/*
   def error(x, status:200, type:"request", title:"An error occurred", message:"", args: [])
     x.res.status = status
-    if App[:app_error][type.to_sym]
-      App[:app_error][type.to_sym][:get][x, title, message, *args]
-    else
+    begin
+      if App[:app_error][type.to_sym]
+        App[:app_error][type.to_sym][:get][x, title, message, *args]
+      else
+        x << "ERROR: #{title} - #{message}"
+      end
+    rescue
       x << "ERROR: #{title} - #{message}"
     end
   end
@@ -141,7 +145,7 @@ module Waxx::App
       end
       return false if g.nil?
       return true if %w(* all any public).include? g.to_s
-      return access?(x, g)
+      return access?(x, acl: g)
     when Proc
       return acl.call(x)
     else
@@ -163,7 +167,7 @@ module Waxx::App
   def login_needed(x)
     if x.ext == "json"
       x.res.status = 400
-      x << {ok: false, msg: 'Login needed: Session did not pass ACL'}
+      x << {ok: false, msg: 'Login needed: Session did not pass ACL'}.to_json
     else
       App::Html.render(x,
         title: "Please Login",

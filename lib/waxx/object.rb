@@ -30,14 +30,15 @@ module Waxx::Object
   # Attributes of each argument to the runs method
   #
   # ```
-  # desc:   A text description of the act. This is used in the documentation of your app
-  # acl:    The access control list. See the ACL section below
-  # get:    Handle GET requests
-  # put:    Handle PUT requests
-  # post:   Handle POST requests
-  # patch:  Handle PATCH requests
-  # delete: Handle DELETE requests
-  # run:    A generic handler for any request method (for example if you want all PUT, POST, PATCH, and DELETE requests to go to the same handler).
+  # desc:       A text description of the act. This is used in the documentation of your app
+  # acl:        The access control list. See the ACL section below
+  # middleware: Run lamdas before or after the handler method
+  # get:        Handle GET requests
+  # put:        Handle PUT requests
+  # post:       Handle POST requests
+  # patch:      Handle PATCH requests
+  # delete:     Handle DELETE requests
+  # run:        A generic handler for any request method (for example if you want all PUT, POST, PATCH, and DELETE requests to go to the same handler).
   # ```
   #
   # ### ACL - Controlling access to your acts
@@ -59,11 +60,11 @@ module Waxx::Object
   # # A proc that return boolean (true = access granted, false = access denied)
   # # The x variable is passed in.
   # acl: -> (x) { 
-  #   x.req.env['X-Key'] == "Secret Key"
+  #   x.req.env['x-key'] == "Secret Key"
   # }
   # # Another example based on the client IP set by the proxy server
   # acl: -> (x) { 
-  #   [x.req.env['X-Forwarded-For']].flatten.first == "10.20.40.80"
+  #   [x.req.env['x-forwarded-for']].flatten.first == "10.20.40.80"
   # }
   # # Require a user to be in two groups
   # acl: -> (x) { 

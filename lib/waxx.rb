@@ -14,13 +14,13 @@
 
 # Libs (core & std)
 require 'socket'
-require 'thread'
 require 'openssl'
 require 'base64'
 require 'json'
 require 'time'
 require 'fileutils'
 require 'yaml'
+require 'bigdecimal'
 # Require ruby files in waxx/ (except irb stuff)
 require_relative 'waxx/waxx'
 require_relative 'waxx/version'

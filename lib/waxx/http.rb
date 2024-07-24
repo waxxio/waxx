@@ -25,9 +25,10 @@ module Waxx::Http
   alias qs escape
 
   def unescape(str)
-    str.to_s.tr('+', ' ').gsub(/((?:%[0-9a-fA-F]{2})+)/) do |m|
+    s = str.to_s.tr('+', ' ').gsub(/((?:%[0-9a-fA-F]{2})+)/) do |m|
       [m.delete('%')].pack('H*')
-    end
+    end.force_encoding('UTF-8')
+	  s.valid_encoding? ? s : s.force_encoding(str.encoding)
   end
 
   def parse_head(io)
@@ -38,7 +39,7 @@ module Waxx::Http
       break if e.strip == ""
       head << e
       n, v = e.split(":", 2)
-      env[n] = v.strip
+      env[n.downcase] = v.strip
     end
     Waxx.debug "env.size: #{env.size}", 9
     [env, head]
@@ -46,7 +47,7 @@ module Waxx::Http
 
   def query_string_to_hash(str, base={})
     return base if str.nil? or str.strip == ""
-    str.strip.split(/[;&]/).each{|nv|
+    str.force_encoding('UTF-8').strip.split(/[;&]/).each{|nv|
       n, v = nv.split("=",2).map{|s| unescape(s)}
       if n =~ /\[\]$/
         n = n.sub(/\[\]$/,"")
@@ -60,7 +61,7 @@ module Waxx::Http
   end
 
   def parse_multipart(env, data)
-    boundary = env['Content-Type'].match(/boundary=(.*)$/)[1]
+    boundary = env['content-type'].match(/boundary=(.*)$/)[1]
     parts = data.split("--"+boundary+"\r\n")
     post = {}
     parts.each{|part|
@@ -68,12 +69,12 @@ module Waxx::Http
       begin
         head, body = part.split("\r\n\r\n",2)
         headers = Hash[*(head.split("\r\n").map{|hp| hp.split(":",2).map{|i| i.strip}}.flatten)]
-        cd = Hash[*("_=#{headers['Content-Disposition']}".split(";").map{|da| da.strip.gsub('"',"").split("=",2)}.flatten)]
+        cd = Hash[*("_=#{headers['content-disposition']}".split(";").map{|da| da.strip.gsub('"',"").split("=",2)}.flatten)]
         if cd['filename']
           post[cd['name']] = {
             filename: cd['filename'],
             data: body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,""),
-            content_type: headers['Content-Type'],
+            content_type: headers['content-type'],
             headers: headers
           }
         else
@@ -115,13 +116,13 @@ module Waxx::Http
   def parse_data(env, meth, io, head)
     Waxx.debug "parse_data"
     if %w(PUT POST PATCH).include? meth
-      data = io.read(env['Content-Length'].to_i)
-      Waxx.debug "data.size: #{data.size} #{env['Content-Type']}"
-      if env['Content-Length'].to_i == 0
+      data = io.read(env['content-length'].to_i)
+      Waxx.debug "data.size: #{data.size} #{env['content-type']}", 6
+      if env['content-length'].to_i == 0
         post = {}.freeze
         data = nil
       else
-        case (env['Content-Type'] || env['content-type'] || env['Content-type'])
+        case env['content-type']
           when /x-www-form-urlencoded/
             post = query_string_to_hash(data).freeze
           when /multipart/
@@ -129,7 +130,7 @@ module Waxx::Http
           when /json/
             post = (JSON.parse(data)).freeze
           else
-            post = data.freeze
+            post = {"data" => data}.freeze
         end
       end
     else
@@ -169,6 +170,7 @@ module Waxx::Http
     js:      "application/javascript; charset=utf-8",
     json:    "application/json; charset=utf-8",
     tab:     "text/tab-separated-values; charset=utf-8",
+    tsv:     "text/tab-separated-values; charset=utf-8",
     txt:     "text/plain; charset=utf-8",
     xml:     "text/xml",                              
     gif:     "image/gif",                             

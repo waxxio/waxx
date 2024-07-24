@@ -44,7 +44,6 @@ module Waxx::Server
       if not Waxx::Csrf.ok?(x)
         true
       end
-      puts "Cleared CSRF"
     end
     false
   end
@@ -90,8 +89,7 @@ module Waxx::Server
       #Waxx.debug "no-file"
       env, head = Waxx::Http.parse_head(io)
       Waxx.debug [Time.now.to_s, meth, uri].join(" "), 2
-      #Waxx.debug head, 9
-      cookie = Waxx::Http.parse_cookie(env['Cookie'])
+      cookie = Waxx::Http.parse_cookie(env['cookie'])
       begin
         usr = cookie[Waxx['cookie']['user']['name']] ? JSON.parse(::App.decrypt(cookie[Waxx['cookie']['user']['name']][0])) : default_cookies[Waxx['cookie']['user']['name']] 
       rescue => e
@@ -181,7 +179,7 @@ module Waxx::Server
   def fatal_error(x, e)
     x.res.status = 503
     puts "FATAL ERROR: #{e}\n#{e.backtrace}"
-    report = "APPLICATION ERROR\n=================\n\nUSR:\n\n#{x.usr.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nERROR:\n\n#{e}\n#{e.backtrace.join("\n")}\n\nENV:\n\n#{x.req.env.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nGET:\n\n#{x.req.get.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nPOST:\n\n#{x.req.post.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\n"
+    report = "APPLICATION ERROR\n=================\n\nUSR:\n\n#{x.usr.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nERROR:\n\n#{e}\n#{e.backtrace.join("\n")}\n\nENV:\n\nHostname: #{`hostname`}\n#{x.req.env.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nGET:\n\n#{x.req.get.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\nPOST:\n\n#{x.req.post.map{|n,v| "#{n}: #{v}"}.join("\n") rescue nil}\n\n"
     if Waxx['debug']['on_screen']
       x << "<pre>#{report.h}</pre>" 
     else

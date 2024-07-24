@@ -175,7 +175,7 @@ module Waxx::Console
       if target == "waxx"
         tests = []
         Dir.entries(opts[:base] + '/test').each{|f|
-          next if f =~ /^\./
+          next if f =~ /^\./ or not f =~ /\.rb$/
           tests << f.sub(/\.rb$/,"")
           path = opts[:base] + '/test/' + f
           puts path

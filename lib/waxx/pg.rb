@@ -179,11 +179,16 @@ module Waxx::Pg
     ret = []
     i = 1
     cols.each{|n,v|
-      if data/n
+      if data.has_key? n or data.has_key? n.to_s
         names << n.to_s
-        vars << "$#{i}"
-        vals << cast(v, data/n)
-        i += 1
+        # Make empty array array literals
+        if v[:type].to_s == 'array' and ((data/n).nil? or (data/n).empty?)
+          vars << "'{}'"
+        else
+          vars << "$#{i}"
+          vals << cast(v, data/n)
+          i += 1
+        end
       end
       ret << n.to_s
     }
@@ -192,7 +197,7 @@ module Waxx::Pg
     sql << " RETURNING #{returning || ret.join(",")}"
     Waxx.debug(sql)
     Waxx.debug(vals)
-    x.db[@db].exec(sql, vals).first 
+    x.db[@db].exec(sql, vals).first
   end
 
   def put(x, id, data, cols:nil, returning:nil, view:nil, where:nil, &blk)

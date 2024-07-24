@@ -65,14 +65,18 @@ module Waxx::Database
       next if db_only and db_only.to_sym != name
       puts "Migrating: db.#{name}"
       # get the latest version
-      latest = db.exec("SELECT value FROM waxx WHERE name = 'db.#{name}.migration.last'").first['value']
-      Dir.entries("#{opts[:base]}/db/#{name}/").sort.each{|f|
-        if f =~ /\.sql$/ and f > latest
-          puts "  #{f}"
-          db.exec(File.read("#{opts[:base]}/db/#{name}/#{f}"))
-          db.exec("UPDATE waxx SET value = $1 WHERE name = 'db.#{name}.migration.last'",[f])
-        end
-      }
+      latest = db.exec("SELECT value FROM waxx WHERE name = 'db.migration.last'").first['value'] rescue nil
+      if latest.nil?
+        puts "WARNING: No db.migration.last key in waxx table for #{name}"
+      else
+        Dir.entries("#{opts[:base]}/db/#{name}/").sort.each{|f|
+          if f =~ /\.sql$/ and f > latest
+            puts "  #{f}"
+            db.exec(File.read("#{opts[:base]}/db/#{name}/#{f}"))
+            db.exec("UPDATE waxx SET value = $1 WHERE name = 'db.migration.last'",[f])
+          end
+        }
+      end
     }
     puts "Migration complete"
   end

@@ -102,7 +102,7 @@ module Waxx
 
     def cookie(name:"", value:nil, domain:nil, expires:nil, path:"/", secure:true, http_only: false, same_site: "Lax")
       expires = expires.nil? ? "" : "expires=#{Time === expires ? expires.rfc2822 : expires}; "
-      cookies << "#{name}=#{Waxx::Http.escape(value.to_s)}; #{expires}#{";domain=#{domain}" if domain}; path=#{path}#{"; secure" if secure}#{"; HttpOnly" if http_only}; SameSite=#{same_site}"
+      cookies << "#{name}=#{Waxx::Http.escape(value.to_s)}; #{expires}#{"domain=#{domain}" if domain}; path=#{path}#{"; secure" if secure}#{"; HttpOnly" if http_only}; SameSite=#{same_site}"
     end
   end
 

@@ -76,10 +76,18 @@ module Waxx
       res << str.to_s
     end
     def [](k)
-      req.post[k.to_s] || req.get[k.to_s]
+      begin
+        req.post/k || req.get/k
+      rescue
+        nil
+      end
     end
     def /(k)
-      req.post[k.to_s] || req.get[k.to_s]
+      begin
+        req.post/k || req.get/k
+      rescue
+        nil
+      end
     end
     def usr?
       not (usr['id'].nil? or usr['id'].to_i == 0) 
