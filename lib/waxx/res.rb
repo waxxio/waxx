@@ -19,7 +19,7 @@ module Waxx
   #
   # ```
   # x.res[name] = value    # Set a response header
-  # x.res.as(extention)    # Set the Content-Type header based on extension
+  # x.res.as(extention)    # Set the content-type header based on extension
   # x.res.redirect '/path' # Redirect the client with 302 / Location header
   # x.res.location '/path' # Redirect the client with 302 / Location header
   # x.res.cookie(          # Set a cookie
@@ -45,7 +45,9 @@ module Waxx
     :no_cookies
   ) do
 
-    # Send output to the client (may be buffered)
+    attr :headers_sent
+
+    # Send output to the client buffered until flush() or compalete()
     def << str
       out << str
     end
@@ -59,7 +61,7 @@ module Waxx
     end
 
     def as(ext)
-      headers['Content-Type'] = Waxx::Http.ctype(ext)
+      headers['content-type'] = Waxx::Http.ctype(ext)
     end
     
     def location(uri)
@@ -79,13 +81,29 @@ module Waxx
         "\r\n"
       ].flatten.join("\r\n")
     end
+
+    def flush(content=nil)
+      unless @headers_sent
+        server.print head
+        @headers_sent = true
+      end
+      if content.nil?
+        server.print out.join
+        out.clear
+      else
+        server.print content
+      end
+    end
     
     # Output the headers and the body
     def complete
       re = out.join
-      headers["Content-Length"] = re.bytesize
+      headers["content-length"] = re.bytesize
       begin
-        server.print head
+        unless @headers_sent
+          server.print head
+          @headers_sent = true
+        end
         server.print re
       # Connection reset by peer
       rescue Errno::ECONNRESET => e
