@@ -77,14 +77,18 @@ module Waxx
     end
     def [](k)
       begin
-        req.post[k.to_s] || req.get[k.to_s]
+        req.post.has_key?(k) ? req.post[k] :
+          req.post.has_key?(k.to_s) ? req.post[k.to_s] :
+            req.get/k
       rescue
         nil
       end
     end
     def /(k)
       begin
-        req.post[k.to_s] || req.get[k.to_s]
+        req.post.has_key?(k) ? req.post[k] :
+          req.post.has_key?(k.to_s) ? req.post[k.to_s] :
+            req.get/k
       rescue
         nil
       end
