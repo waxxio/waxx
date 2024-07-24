@@ -210,7 +210,7 @@ module Waxx::Pg
     sql = "UPDATE #{@table} SET "
     set = []
     vals = []
-    ret = []
+    ret = [@pkey]
     i = 1
     cols.each{|n,v|
       if data.has_key? n.to_s or data.has_key? n.to_sym
@@ -242,6 +242,8 @@ module Waxx::Pg
       val.to_s.empty? ? nil : val.to_i
     when :float, :numeric
       val.to_s.empty? ? nil : val.to_f
+    when :bool, :boolean
+      val.nil? ? nil : ['t', 'true', 'y', 'yes'].include?(val.to_s.downcase) ? true : false
     else
       val
     end
