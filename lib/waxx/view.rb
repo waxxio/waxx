@@ -62,6 +62,8 @@ module Waxx::View
   attr :order_by
   # A hash of how you can sort this view
   attr :orders
+  # Initial where (view will always include this filter (plus any additional where clauses)
+  attr :initial_where
 
   ##
   # Initialize a view. This is normally done automatically when calling `has`.
@@ -78,6 +80,7 @@ module Waxx::View
     @object = App.get_const(App, @table)
     @relations = {}
     @orders = {}
+    @initial_where = ["", []]
     has(*cols) if cols
     as(layouts) if layouts
   end
@@ -130,6 +133,8 @@ module Waxx::View
         Waxx.debug "Column #{c} not defined in #{@object}."
         #raise "Column #{c} not defined in #{@object}."
       end
+      @orders[n.to_sym] = col/:order || n
+      @orders["_#{n}".to_sym] = col/:_order || "#{n} desc"
       #Waxx.debug @relations.inspect
       #TODO: Deal with relations that have different names than the tables
       col[:views] << self rescue col[:views] = [self]
@@ -158,7 +163,13 @@ module Waxx::View
       col = (App.get_const(App, j/:foreign_table)/col_name).dup
       col[:table] = rel_name
     rescue NoMethodError => e
-      Waxx.debug "ERROR: NoMethodError: #{rel_name} does not define col: #{col_name}"
+      if j.nil?
+        Waxx.debug %(ERROR: \n\n
+        NoMethodError: The #{rel_name} relationship is not defined in any columns of #{@object.name}.
+        FIX: Add "is: '#{rel_name}:table.foreign_key'" to a column definition in the 'has' method in #{@object.name}.)
+      else
+        Waxx.debug "ERROR: NoMethodError: #{rel_name} does not define col: #{col_name}"
+      end
       raise e
     rescue NameError, TypeError => e
       Waxx.debug "ERROR: Name or Type Error: #{rel_name} does not define col: #{col_name}"
@@ -260,6 +271,12 @@ module Waxx::View
   end
 
   ##
+  # Set the initial where clause. The view will always include this in the where.
+  def init_where(sql, args=[])
+    @initial_where = [sql, args]
+  end
+
+  ##
   # Gets the data for the view and displays it. This is just a shortcut method.
   # 
   # This is normally called from the handler method defined in Object
@@ -301,14 +318,16 @@ module Waxx::View
   # Automatically build the where clause of SQL based on the parameters passed in and the definition of matches and searches.
   def build_where(x, args: {}, matches: @matches, searches: @searches)
     return nil if args.nil? or args.empty? or (matches.nil? and searches.nil?)
-    w_str = ""
-    w_args = []
+    w_str = @initial_where[0].dup
+    w_args = @initial_where[1].dup
     q = args/:q || x['q']
     if q and searches
+      w_str += " AND " if w_str != ""
       w_str += "("
       searches.each_with_index{|c, i|
+        col = @columns/c
         w_str += " OR " if i > 0
-        w_str += "LOWER(#{c}) like $1"
+        w_str += "LOWER(#{col/:table}.#{col/:column}) like $1"
       }
       w_args << "%#{q.downcase}%"
       w_str += ")"
@@ -355,8 +374,14 @@ module Waxx::View
   def put_post(x, id, data, args:nil, returning: nil)
     @object.put_post(x, id, data, view: self, returning: returning)
   end
-  alias post put_post
-  alias put put_post
+  
+  def post(x, data, returning: nil)
+    @object.post(x, data, returning: returning, view: self)
+  end
+
+  def put(x, id, data, returning: nil)
+    @object.put(x, id, data, returning: returning, view: self)
+  end
 
   ##
   # Delete a record by ID (primary key of the primary object)
