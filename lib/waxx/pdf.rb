@@ -5,8 +5,8 @@
 
 module Waxx::Pdf
 
-  def new_doc(margin:50, orientation: "portrait", info: {})
-    Prawn::Document.new(:margin=>margin, :orientation=>orientation, :info=>info)
+  def new_doc(margin: 50, page_size: "LETTER", page_layout: "portrait", info: {})
+    Prawn::Document.new(margin: margin, page_size: page_size, page_layout: page_layout, info: info)
   end
 
   def doc_info(
