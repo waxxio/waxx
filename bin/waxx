@@ -3,7 +3,7 @@
 require 'optparse'
 
 command = ARGV[0]    
-commands = %w(on off buff start stop restart console get put post delete patch config migrate migration deploy test init help)
+commands = %w(on off buff start stop restart console get put post delete patch config migrate migration deploy test init gen generate help)
 if not commands.include? command
   puts "Enter a command: #{commands.join(", ")}"
   puts "waxx --help for all options"
@@ -110,6 +110,8 @@ end
 if Waxx::Console::Command.respond_to? command
   if %w(migration).include? command
     Waxx::Console::Command.send(command, ARGV[1], ARGV[2], opts)
+  elsif %w(gen generate).include? command
+    Waxx::Console::Command.send(command, *ARGV.slice(1..))
   elsif %w(get post put delete patch test deploy migrate).include? command
     Waxx::Console::Command.send(command, ARGV[1], opts)
   else
