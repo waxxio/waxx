@@ -117,6 +117,9 @@ module Waxx::Server
       res = Waxx::Res.new(io, 200, default_response_headers(req, ext), [], [], [])
       jobs = []
       x = Waxx::X.new(req, res, usr, ua, db, meth.downcase.to_sym, app, act, oid, args, ext, jobs).freeze
+      if usr['id'].nil? and (get/:qlk or post/:qlk)
+        App::Usr.login_by_qlk(x, post/:qlk || get/:qlk)
+      end
       if csrf?(x)
         Waxx::App.csrf_failure(x)
         finish(x, io)
