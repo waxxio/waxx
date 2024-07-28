@@ -23,15 +23,15 @@ module Waxx
   # A few helper functions
 
   ##
-  # Shortcut to Waxx::Waxx variables
+  # Shortcut to Waxx::Conf variables
   def [](str)
-    Waxx::Conf[str]
+    Waxx::Conf[str.to_s]
   end
 
   ##
-  # Shortcut to Waxx::Waxx variables
+  # Shortcut to Waxx::Conf variables
   def /(str)
-    Waxx::Conf/str
+    Waxx::Conf[str.to_s]
   end
 
   ##
