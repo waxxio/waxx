@@ -203,6 +203,16 @@ module Waxx::Console
       puts re.send("to_#{opts[:format]}")
     end
 
+    def generate(scope, app, act=nil, type='record')
+      unless File.exist? 'app/app.rb'
+        puts "Error: You need to call 'waxx generate' from the root of a waxx installation."
+        return
+      end
+      x = Waxx::Console.x
+      Waxx::Generate.gen(x, scope, app, act, type)
+    end
+    alias gen generate
+
   end
 
 end
