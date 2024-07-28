@@ -123,6 +123,7 @@ class String
   def capitalize_all
     split(/[ _]/).map{|l| l.capitalize}.join(' ')
   end
+  alias title_case capitalize_all
 end
 class Time
   # HTML format
