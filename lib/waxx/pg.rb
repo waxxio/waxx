@@ -185,9 +185,15 @@ module Waxx::Pg
         if v[:type].to_s == 'array' and ((data/n).nil? or (data/n).empty?)
           vars << "'{}'"
         else
-          vars << "$#{i}"
-          vals << cast(v, data/n)
-          i += 1
+          if data/n === :default
+            vars << "DEFAULT"
+          elsif data/n === :now
+            vars << "NOW()"
+          else
+            vars << "$#{i}"
+            vals << cast(v, data/n)
+            i += 1
+          end
         end
       end
       ret << n.to_s
@@ -214,10 +220,20 @@ module Waxx::Pg
     i = 1
     cols.each{|n,v|
       if data.has_key? n.to_s or data.has_key? n.to_sym
-        set << "#{n} = $#{i}"
-        vals << cast(v, data/n)
+        if data/n === :default
+          set << "#{n} = DEFAULT"
+        elsif data/n === :now
+          set << "#{n} = NOW()"
+        else
+          if !(data/n).nil? and (v/:type).to_s =~ /\[\]$/ and (data/n).empty?
+            set << "#{n} = ARRAY[]::#{v/:type}"
+          else
+            set << "#{n} = $#{i}"
+            vals << cast(v, data/n)
+            i += 1
+          end
+        end
         ret << n.to_s
-        i += 1
       end
     }
     sql << set.join(",")
@@ -258,6 +274,35 @@ module Waxx::Pg
     return orders[req_order.to_sym] if orders.has_key? req_order.to_sym
     @pkey
   end
+
+  def columns_for(x, table_name, conn_name=:app)
+    # Get the primary key
+    pkey = x.db[conn_name].exec("
+      select column_name
+      from information_schema.key_column_usage
+      where table_schema = 'public'
+      and table_name = $1
+      and constraint_name like '%_pkey'",
+      [
+        table_name
+      ]
+    ).first['column_name'] rescue nil
+    columns = x.db[conn_name].exec("
+      select  column_name, data_type
+      from    information_schema.columns 
+      where   table_schema = 'public'
+      and     table_name = $1
+      order   by ordinal_position
+      ",[
+        table_name
+      ]
+    )
+    columns.map{|c|
+      c['pkey'] = c['column_name'] == pkey
+      c
+    }
+  end
+
 
   def debug(str, level=3)
     Waxx.debug(str, level)
