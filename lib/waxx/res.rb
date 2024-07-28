@@ -47,7 +47,7 @@ module Waxx
 
     attr :headers_sent
 
-    # Send output to the client buffered until flush() or compalete()
+    # Send output to the client buffered until flush() or complete()
     def << str
       out << str
     end
@@ -98,7 +98,7 @@ module Waxx
     # Output the headers and the body
     def complete
       re = out.join
-      headers["content-length"] = re.bytesize
+      headers["content-length"] = re.bytesize if headers['content-length'].nil?
       begin
         unless @headers_sent
           server.print head
@@ -118,9 +118,15 @@ module Waxx
       end
     end
 
-    def cookie(name:"", value:nil, domain:nil, expires:nil, path:"/", secure:true, http_only: false, same_site: "Lax")
-      expires = expires.nil? ? "" : "expires=#{Time === expires ? expires.rfc2822 : expires}; "
-      cookies << "#{name}=#{Waxx::Http.escape(value.to_s)}; #{expires}#{"domain=#{domain}" if domain}; path=#{path}#{"; secure" if secure}#{"; HttpOnly" if http_only}; SameSite=#{same_site}"
+    def cookie(name: "", value: nil, domain: nil, expires: nil, path: "/", secure: true, http_only: false, same_site: "Lax")
+      c = ["#{name}=#{Waxx::Http.escape(value.to_s)}"]
+      c << "Path=#{path}"
+      c << "SameSite=#{same_site}"
+      c << "Expires=#{Time === expires ? expires.rfc2822 : expires}" if expires
+      c << "Domain=#{domain}" if domain
+      c << "Secure" if secure
+      c << "HttpOnly" if http_only
+      cookies << c.join("; ")
     end
   end
 
