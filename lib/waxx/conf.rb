@@ -35,19 +35,19 @@ module Waxx::Conf
   ##
   # Get a Waxx variable
   def [](n)
-    @data[n]
+    @data[n.to_s]
   end
 
   ##
   # Set a conf variable
   def []=(n, v)
-    @data[n] = v
+    @data[n.to_s] = v
   end
 
   ##
   # Get a Waxx variable
   def /(n)
-    @data[n.to_s] || @data[n.to_sym]
+    @data[n.to_s]
   end
 
 end
