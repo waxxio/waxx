@@ -1,3 +1,3 @@
 module Waxx
-  Version = '0.1.7'
+  Version = '0.1.8'
 end
