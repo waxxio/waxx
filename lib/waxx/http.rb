@@ -60,6 +60,15 @@ module Waxx::Http
     base
   end
 
+  def file_object(boundary, filename, body, headers)
+    {
+      filename: filename,
+      data: body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,""),
+      content_type: headers['content-type'] || headers['Content-Type'],
+      headers: headers
+    }
+  end
+
   def parse_multipart(env, data)
     boundary = env['content-type'].match(/boundary=(.*)$/)[1]
     parts = data.split("--"+boundary+"\r\n")
@@ -68,17 +77,38 @@ module Waxx::Http
       next if part.strip == ""
       begin
         head, body = part.split("\r\n\r\n",2)
-        headers = Hash[*(head.split("\r\n").map{|hp| hp.split(":",2).map{|i| i.strip}}.flatten)]
-        cd = Hash[*("_=#{headers['content-disposition']}".split(";").map{|da| da.strip.gsub('"',"").split("=",2)}.flatten)]
+        headers = Hash[*(head.split("\r\n").map{|hp|
+          hp.split(":",2).map{|i| i.strip}
+        }.flatten)]
+        cd = Hash[*("_=#{headers['Content-Disposition'] || headers['content-disposition']}".split(";").map{|da| da.strip.gsub('"',"").split("=",2)}.flatten)]
+        name = cd['name']
+        # If field name ends with [], make result an array
+        if name.include?('[]')
+          # Strip the square backets off the name for the post key
+          name = name.sub(/\[\]$/,'')
+          post[name] ||= []
+        end
         if cd['filename']
-          post[cd['name']] = {
-            filename: cd['filename'],
-            data: body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,""),
-            content_type: headers['content-type'],
-            headers: headers
-          }
+          # Handle multiple files
+          if post.has_key?(name)
+            if Array === post[name]
+              post[name].push file_object(boundary, cd['filename'], body, headers)
+            else
+              post[name] = [post[name], file_object(boundary, cd['filename'], body, headers)]
+            end
+          else
+            post[name] = file_object(boundary, cd['filename'], body, headers)
+          end
         else
-          post[cd['name']] = body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,"")
+          if post.has_key?(name)
+            if Array === post[name]
+              post[name].push body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,"")
+            else
+              post[name] = [post[name], body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,"")]
+            end
+          else
+            post[name] = body.sub(/\r\n--#{boundary}--\r\n$/,"").sub(/\r\n$/,"")
+          end
         end
       rescue => e
         Waxx.debug "Error parse_multipart: #{e}"
