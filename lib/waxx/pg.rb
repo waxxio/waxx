@@ -260,6 +260,8 @@ module Waxx::Pg
       val.to_s.empty? ? nil : val.to_f
     when :bool, :boolean
       val.nil? ? nil : ['t', 'true', 'y', 'yes'].include?(val.to_s.downcase) ? true : false
+    when :date, :datetime, :timestamp, :time
+      val.to_s.empty? ? nil : val
     else
       val
     end
