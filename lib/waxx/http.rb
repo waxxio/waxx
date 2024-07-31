@@ -114,36 +114,41 @@ module Waxx::Http
   end
 
   def parse_data(env, meth, io, head)
-    Waxx.debug "parse_data"
-    if %w(PUT POST PATCH).include? meth
-      data = io.read(env['content-length'].to_i)
-      Waxx.debug "data.size: #{data.size} #{env['content-type']}"
-      # No content
-      if env['content-length'].to_i == 0
+    begin
+      Waxx.debug "parse_data"
+      if %w(PUT POST PATCH).include? meth
+        data = io.read(env['content-length'].to_i)
+        Waxx.debug "data.size: #{data.size} #{env['content-type']}"
+        # No content
+        if env['content-length'].to_i == 0
+          post = {}.freeze
+          data = nil
+        # Raw file saved by nginx with path in header
+        elsif env['x-file-path']
+          post = {}.freeze
+          data = {"file_path" => env['x-file-path']}
+        # Parse based on content type
+        else
+          case env['content-type']
+            when /x-www-form-urlencoded/
+              post = query_string_to_hash(data).freeze
+            when /multipart/
+              post = parse_multipart(env, data).freeze
+            when /json/
+              post = (JSON.parse(data)).freeze
+            else
+              post = {"data" => data}.freeze
+          end
+        end
+      else
         post = {}.freeze
         data = nil
-      # Raw file saved by nginx with path in header
-      elsif env['x-file-path']
-        post = {}.freeze
-        data = {"file_path" => env['x-file-path']}
-      # Parse based on content type
-      else
-        case env['content-type']
-          when /x-www-form-urlencoded/
-            post = query_string_to_hash(data).freeze
-          when /multipart/
-            post = parse_multipart(env, data).freeze
-          when /json/
-            post = (JSON.parse(data)).freeze
-          else
-            post = {"data" => data}.freeze
-        end
       end
-    else
-      post = {}.freeze
-      data = nil
+      [post, data]
+    rescue => e
+      Waxx.debug("ERROR: Parsing POST data: #{e}")
+      [{error: e.to_s}.freeze, nil]
     end
-    [post, data]
   end
 
   Status = {
