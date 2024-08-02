@@ -103,7 +103,7 @@ module Waxx::Console
       App.put(ARGV[1], opts)
     end
 
-    def delete(opts)
+    def del(opts)
       App.delete(ARGV[1], opts)
     end
 
@@ -114,7 +114,7 @@ module Waxx::Console
         #help = "Use the source, Luke"
         begin
           x = Waxx::Console.x
-          binding.irb
+          binding.irb(show_code: false)
         rescue
           IRB.setup(nil)
           workspace = IRB::WorkSpace.new(self)
