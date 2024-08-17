@@ -337,8 +337,16 @@ module Waxx::View
         next if (x/c).to_s == "" and (args/c).to_s == ""
         w_str += " AND " if w_str != ""
         col = self[c.to_sym]
-        w_str += "#{c} #{col[:match] || "="} $#{w_args.size + 1}"
-        w_args << (args/c || x/c)
+        # match in args needs to be an array
+        if col[:match].to_s == 'in'
+          w_str += "#{c} in (#{([args/c || x/c].flatten).map{|v|
+            w_args << v
+            "$#{w_args.size}"
+          }.join(',')})"
+        else
+          w_str += "#{c} #{col[:match] || "="} $#{w_args.size + 1}"
+          w_args << (args/c || x/c)
+        end
       }
     end
     [w_str, w_args]
