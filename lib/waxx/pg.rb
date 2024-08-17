@@ -57,10 +57,17 @@ module Waxx::Pg
   def build_joins(n, col_is)
     return if col_is.nil?
     [col_is].flatten.each{|str| 
-      r, tc = str.split(":")
-      t, c = tc.split(".")
+      rt, c = str.split(".")
+      r, t = rt.split(":")
+      t = r if t.nil?
       j = c =~ /\+$/ ? "LEFT" : "INNER"
-      @joins[r] = {table: @table, col: n.to_s.strip, join: j.to_s.strip, foreign_table: t.to_s.strip, foreign_col: c.to_s.strip.sub('+','')}
+      @joins[r] = {
+        table: @table,
+        col: n.to_s.strip,
+        join: j.to_s.strip,
+        foreign_table: t.to_s.strip,
+        foreign_col: c.to_s.strip.sub('+','')
+      }
     }
   end
 
