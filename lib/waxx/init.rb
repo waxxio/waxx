@@ -182,7 +182,7 @@ init:
       puts "The databse must already exist and the user must have create table privileges."
       print "  Create waxx table (y|n) [y]:"
       initdb = $stdin.gets.chomp
-      initdb = initdb == '' or not (initdb =~ /[Yy]/).nil?
+      initdb = initdb == '' or not (initdb =~ /[Yy]/).nil? rescue false
       input['init']['db'] = initdb
     end
     input
