@@ -74,6 +74,9 @@ class NilClass
   def empty?
     true
   end
+  def any?
+    false
+  end
 end
 class Numeric
   # HTML format (self -- no escaping needed)
@@ -124,6 +127,9 @@ class String
     split(/[ _]/).map{|l| l.capitalize}.join(' ')
   end
   alias title_case capitalize_all
+  def any?
+    self != ""
+  end
 end
 class Time
   # HTML format
