@@ -235,6 +235,7 @@ init:
     puts ""
     puts "Waxx installed successfully."
     puts "cd into #{install_folder} and run `waxx on` to get your waxx on"
+    puts "Optionally run `waxx gen app TABLE_NAME` where TABLE_NAME is the name of a table in your database."
   end
 
   def create_waxx_table(x, input)
@@ -254,7 +255,7 @@ init:
         CONSTRAINT waxx_uniq UNIQUE(name)
       )
     )
-    insert_sql = %(INSERT INTO waxx (name, value) VALUES ('db.app.migration.last', '0'))
+    insert_sql = %(INSERT INTO waxx (name, value) VALUES ('db.migration.last', '0'))
     puts "  Connecting to: #{input/:databases/:app}"
     begin
       db = Waxx::Database.connect(input/:databases/:app)
