@@ -134,10 +134,10 @@ module App::Usr
       desc: "The home page of a logged in usr",
       acl: "user",
       get: proc{|x, *args|
-        usr = App::Usr.record(x, id: x.usr['id'])
-        person = App::Person.record(x, id: x.usr['id']).first
+        usr = by_id(x, x.usr['id'])
+        person = App::Person.by_id(x, x.usr['id'])
         App::Html.render(x, 
-          title: "#{person['first_name'].h} #{person['last_name'].h}", 
+          title: "#{person['first_name']} #{person['last_name']}", 
           content: App::Usr::Html.home(x, usr: usr, person: person)
         )
       }
@@ -194,7 +194,7 @@ module App::Usr
           x << %({"success":true})
         else
           x.res.status = 302
-          x.res['Location'] = '/'
+          x.res['location'] = '/'
         end
       }
     },

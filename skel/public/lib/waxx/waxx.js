@@ -86,7 +86,6 @@ waxx = {
         return result;
     }, {});
   },
-  fileSize: function(sz){return filesize(sz);},
   cookie: function(name, value, days) {
     if(value === undefined){return waxx.cookies(name)}
     if(value === null){return waxx.cookie(name,"",-1)}
