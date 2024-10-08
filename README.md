@@ -80,11 +80,11 @@ You specify the number of threads in the config file.
 Each thread is prespawned and each thread makes it's own database connection.
 Requests are received and put into a FIFO request queue.
 The threads work through the queue.
-Each request, including session management, a database query, access control, and rendering in HTML or JSON is approximately 1-2ms (on a modern Xeon server).
+Each request, including session management, a database query, access control, and rendering in HTML or JSON is approximately 1 ms (on a modern laptop or server).
 With additional libraries, Waxx also easily generates XML, XLSX, CSV, PDF, etc.
 
 ### Easy to Grok
-Waxx has no Classes.
+Waxx has no classes.
 It is Module-based and the Modules have methods (functions).
 Each method within a Module is given parameters and the method runs in isolation.
 There are no instance variables and no global variables.
@@ -92,7 +92,7 @@ Consequently, it is very easy to understand what any method does and it is very 
 You can call any method in the whole system from the console using `waxx console`.
 Passing in the same variables to a function will always return the same result.
 Waxx does have `x.res.out` variable, which is appended to with `x << "text"`, that is passed into each method and any method can append to the response body or set response headers.
-So it is not truly functional because this is considered a side effect.
+So it is not truly functional because this is a side effect.
 My opinion is that when you are building a response, then copying the response on every method is a waste of resources.
 So it does have this side effect by design.
 
@@ -112,11 +112,11 @@ So it does have this side effect by design.
   - `x.req.get` is a hash of vars passed in the query string
   - `x.req.post` is a hash of vars passed in the body of the request
   - `x.req.env` is a hash of the environment
-  - `x.req['Header-Name']` is a shortcut to incoming headers / environment vars
+  - `x.req['header-name']` is a shortcut to incoming headers / environment vars - always lower-case
   - `x['param_name']` and `x/:param_name` are shortcuts to get and post vars (post vars override get vars)
 - `x.res` contains the status, response cookies, headers, and content body
   - `x << "some text"` appends to the body
-  - `x.res['Header-Name'] = "value"` to set a response header
+  - `x.res['header-name'] = "value"` to set a response header
   - `x.status = 404` set the status. Defaults to 200.
 - `x.usr` is the session cookie hash (set expiration params in opt/{env}/config.yaml)
   - `x.usr['name'] = 'Joe'` will set the name variable in the `x.usr` variable accross requests.
@@ -130,10 +130,10 @@ See [Waxx Docs](https://www.waxx.io/doc/code) for more info.
 1. HTTP request is received by Waxx (Use a reverse proxy/load balancer/https server like NGINX first for production)
 2. The request is placed in a queue: `Waxx::Server.queue`
 3. The request is popped off the queue by a Ruby green thread and parsed
-4. The variable `x` is created with the request `x.req` and response `x.res`.
+4. The variable `x` is created with the request `x.req` and response `x.res` and DB connections in `x.db`.
 5. The run method is called for the appropriate app (a namespaced RPC). All routes are: /app/act/[arg1/args2/arg3/...] => app is the module and act is the method to call with the args.
-6. You output to the response using `x << "output"` or using helper methods: `App::Html.page(...)`
-7. The response is returned to the client. Partial, chunked, and streamed responses are supported as well as you have direct access to the IO.
+6. You output to the response using `x << "output"` or using helper methods: `App::Html.render(...)`
+7. The response is returned to the client. Partial, chunked, and streamed responses are supported as well. You have direct access to the IO.
 
 ## Fast to Develop
 
